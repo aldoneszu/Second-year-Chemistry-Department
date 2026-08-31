@@ -1,0 +1,913 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>مذاكرة | الفرقة الثانية علوم - قسم الكيمياء</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+
+<style>
+:root{
+  --paper:#F6F3EC;
+  --surface:#FFFFFF;
+  --ink:#1E2430;
+  --ink-soft:#5B6472;
+  --line:#E4DFD3;
+  --copper:#C1712F;
+  --copper-dark:#9A5620;
+  --copper-light:#F3E3D0;
+  --teal:#1D6E73;
+  --teal-light:#E1EFEE;
+  --danger:#B5433A;
+  --danger-light:#F6E2E0;
+  --radius-s:6px;
+  --radius-m:12px;
+  --shadow: 0 1px 2px rgba(30,36,48,.06), 0 4px 16px rgba(30,36,48,.05);
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0}
+body{
+  background:var(--paper);
+  color:var(--ink);
+  font-family:'Cairo',sans-serif;
+  line-height:1.7;
+  min-height:100vh;
+}
+.mono{font-family:'JetBrains Mono',monospace}
+img,svg{max-width:100%}
+button{font-family:inherit;cursor:pointer}
+input,select{font-family:inherit}
+a{color:inherit}
+
+/* ---------- circuit trace motif ---------- */
+.trace-rule{
+  display:flex;align-items:center;gap:6px;margin:18px 0;
+  color:var(--copper);
+}
+.trace-rule::before,.trace-rule::after{
+  content:"";flex:1;height:2px;
+  background:repeating-linear-gradient(90deg,var(--line) 0 6px, transparent 6px 10px);
+}
+.trace-dot{width:8px;height:8px;border-radius:50%;background:var(--copper);flex:none}
+
+/* ---------- top bar ---------- */
+.topbar{
+  position:sticky;top:0;z-index:40;
+  background:var(--surface);
+  border-bottom:1px solid var(--line);
+  padding:12px 16px;
+  display:flex;align-items:center;justify-content:space-between;
+}
+.brand{display:flex;align-items:center;gap:10px;font-weight:800;font-size:17px}
+.brand-mark{width:30px;height:30px;flex:none}
+.brand small{display:block;font-weight:500;color:var(--ink-soft);font-size:11px}
+.icon-btn{
+  background:none;border:1px solid var(--line);border-radius:var(--radius-s);
+  width:36px;height:36px;display:flex;align-items:center;justify-content:center;color:var(--ink-soft);
+}
+
+.wrap{max-width:640px;margin:0 auto;padding:16px 16px 90px}
+
+/* ---------- auth screen ---------- */
+.auth-screen{min-height:100vh;display:flex;flex-direction:column;justify-content:center;padding:24px 20px}
+.auth-hero{text-align:center;margin-bottom:22px}
+.auth-hero .brand-mark{width:56px;height:56px;margin:0 auto 10px}
+.auth-hero h1{font-size:22px;margin:0 0 4px;font-weight:800}
+.auth-hero p{color:var(--ink-soft);margin:0;font-size:14px}
+.auth-card{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius-m);padding:20px;box-shadow:var(--shadow)}
+.field{margin-bottom:14px}
+.field label{display:block;font-size:13px;font-weight:600;margin-bottom:6px;color:var(--ink-soft)}
+.field input{
+  width:100%;padding:12px 14px;border:1.5px solid var(--line);border-radius:var(--radius-s);
+  font-size:15px;background:var(--paper);color:var(--ink)
+}
+.field input:focus{outline:none;border-color:var(--copper)}
+.btn-primary{
+  width:100%;padding:13px;border:none;border-radius:var(--radius-s);
+  background:var(--copper);color:#fff;font-weight:700;font-size:15px;
+}
+.btn-primary:active{background:var(--copper-dark)}
+.btn-primary:disabled{opacity:.5}
+.btn-ghost{
+  width:100%;padding:13px;border:1.5px solid var(--line);border-radius:var(--radius-s);
+  background:transparent;color:var(--ink);font-weight:700;font-size:14px;margin-top:8px
+}
+.auth-switch{text-align:center;margin-top:16px;font-size:14px;color:var(--ink-soft)}
+.auth-switch button{background:none;border:none;color:var(--copper);font-weight:700;font-size:14px;padding:0}
+.auth-error{background:var(--danger-light);color:var(--danger);border-radius:var(--radius-s);padding:10px 12px;font-size:13px;margin-bottom:14px}
+.hidden{display:none !important}
+
+/* ---------- dashboard ---------- */
+.hello{font-size:19px;font-weight:800;margin:4px 0 2px}
+.hello-sub{color:var(--ink-soft);font-size:13.5px;margin:0 0 18px}
+
+.stat-row{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:22px}
+.stat{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius-m);padding:12px 8px;text-align:center}
+.stat b{display:block;font-size:20px;font-family:'JetBrains Mono',monospace;color:var(--copper-dark)}
+.stat span{font-size:11.5px;color:var(--ink-soft)}
+
+.section-title{font-size:15px;font-weight:800;margin:22px 0 10px;display:flex;align-items:center;gap:8px}
+.section-title .trace-dot{width:6px;height:6px}
+
+.subject-card{
+  background:var(--surface);border:1px solid var(--line);border-radius:var(--radius-m);
+  padding:16px;margin-bottom:12px;display:flex;align-items:center;gap:14px;
+}
+.subject-card.locked{opacity:.55}
+.subject-badge{
+  width:46px;height:46px;border-radius:10px;background:var(--copper-light);color:var(--copper-dark);
+  display:flex;align-items:center;justify-content:center;font-weight:800;font-size:18px;flex:none
+}
+.subject-info{flex:1;min-width:0}
+.subject-info h3{margin:0 0 2px;font-size:15.5px;font-weight:700}
+.subject-info p{margin:0;font-size:12.5px;color:var(--ink-soft)}
+.chip{
+  display:inline-block;font-size:11px;padding:2px 8px;border-radius:20px;
+  background:var(--teal-light);color:var(--teal);font-weight:700;margin-top:5px
+}
+.chip.soon{background:var(--line);color:var(--ink-soft)}
+.arrow{color:var(--ink-soft);flex:none}
+
+/* ---------- subject page ---------- */
+.tabbar{display:flex;gap:8px;margin-bottom:18px;background:var(--surface);border:1px solid var(--line);border-radius:var(--radius-m);padding:4px}
+.tabbar button{
+  flex:1;padding:9px 4px;border:none;background:none;border-radius:var(--radius-s);
+  font-weight:700;font-size:13.5px;color:var(--ink-soft)
+}
+.tabbar button.active{background:var(--copper);color:#fff}
+
+.chapter-card{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius-m);margin-bottom:12px;overflow:hidden}
+.chapter-head{padding:14px 16px;display:flex;align-items:center;gap:12px}
+.chapter-num{
+  width:34px;height:34px;border-radius:8px;background:var(--paper);border:1px solid var(--line);
+  display:flex;align-items:center;justify-content:center;font-weight:800;font-family:'JetBrains Mono',monospace;
+  color:var(--copper-dark);flex:none
+}
+.chapter-title{flex:1;font-weight:700;font-size:14.5px}
+.chapter-progress{flex:none;width:34px;height:34px;position:relative}
+.chapter-progress svg{transform:rotate(-90deg)}
+.chapter-progress circle{fill:none;stroke-width:3.5}
+.chapter-actions{display:flex;gap:8px;padding:0 16px 14px}
+.btn-sm{
+  flex:1;padding:9px 6px;border-radius:var(--radius-s);border:1.5px solid var(--line);
+  background:var(--paper);font-weight:700;font-size:13px;text-align:center
+}
+.btn-sm.primary{background:var(--teal);border-color:var(--teal);color:#fff}
+
+/* ---------- study view ---------- */
+.study-block{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius-m);padding:18px;margin-bottom:14px}
+.study-block h3{margin:0 0 8px;font-size:15.5px;color:var(--copper-dark)}
+.study-block p{margin:0 0 10px;font-size:14.5px}
+.study-block ul{margin:0 0 10px;padding-inline-start:20px;font-size:14.5px}
+.formula-box{
+  background:var(--paper);border:1px dashed var(--copper);border-radius:var(--radius-s);
+  padding:12px 14px;margin:10px 0;font-family:'JetBrains Mono',monospace;font-size:15px;color:var(--copper-dark);
+  text-align:center;direction:ltr
+}
+.note-box{background:var(--teal-light);border-radius:var(--radius-s);padding:12px 14px;font-size:13.5px;color:var(--teal);margin:10px 0}
+.note-box b{display:block;margin-bottom:3px}
+.back-link{display:inline-flex;align-items:center;gap:6px;color:var(--ink-soft);font-size:13.5px;font-weight:700;margin-bottom:14px}
+
+/* ---------- quiz ---------- */
+.quiz-progress-bar{height:6px;background:var(--line);border-radius:3px;overflow:hidden;margin-bottom:18px}
+.quiz-progress-fill{height:100%;background:var(--copper);transition:width .25s}
+.q-card{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius-m);padding:18px}
+.q-num{font-size:12px;color:var(--ink-soft);font-weight:700;margin-bottom:6px}
+.q-text{font-size:16px;font-weight:700;margin-bottom:16px}
+.opt{
+  display:block;width:100%;text-align:right;padding:13px 14px;margin-bottom:9px;
+  border:1.5px solid var(--line);border-radius:var(--radius-s);background:var(--paper);font-size:14.5px
+}
+.opt.correct{background:#E4F2E4;border-color:#4C8C56;color:#2F5C36;font-weight:700}
+.opt.wrong{background:var(--danger-light);border-color:var(--danger);color:var(--danger);font-weight:700}
+.opt.disabled{pointer-events:none}
+.explain{
+  margin-top:12px;padding:12px 14px;border-radius:var(--radius-s);background:var(--teal-light);
+  font-size:13.5px;color:var(--teal)
+}
+.quiz-nav{display:flex;gap:10px;margin-top:16px}
+.result-card{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius-m);padding:26px 20px;text-align:center}
+.result-score{font-size:42px;font-weight:800;color:var(--copper-dark);font-family:'JetBrains Mono',monospace}
+.result-card p{color:var(--ink-soft);margin:4px 0 18px}
+
+/* ---------- flashcards ---------- */
+.flash-stage{display:flex;flex-direction:column;align-items:center;padding:10px 0 6px}
+.flash-count{font-size:13px;color:var(--ink-soft);margin-bottom:14px;font-family:'JetBrains Mono',monospace}
+.flashcard{
+  width:100%;max-width:340px;height:190px;perspective:1000px;margin-bottom:22px;
+}
+.flashcard-inner{
+  position:relative;width:100%;height:100%;transition:transform .5s;transform-style:preserve-3d;
+}
+.flashcard.flipped .flashcard-inner{transform:rotateY(180deg)}
+.flashcard-face{
+  position:absolute;inset:0;backface-visibility:hidden;border-radius:var(--radius-m);
+  display:flex;align-items:center;justify-content:center;flex-direction:column;padding:18px;
+  border:1.5px solid var(--line);box-shadow:var(--shadow);text-align:center;background:var(--surface)
+}
+.flashcard-face.back{transform:rotateY(180deg);background:var(--copper-light)}
+.flashcard-face .lbl{font-size:11px;color:var(--ink-soft);font-weight:700;margin-bottom:10px;letter-spacing:.3px}
+.flashcard-face .term{font-size:22px;font-weight:800;font-family:'JetBrains Mono',monospace;direction:ltr;color:var(--copper-dark)}
+.flashcard-face.back .term{color:var(--copper-dark);font-family:'Cairo',sans-serif;font-size:21px}
+.flash-actions{display:flex;gap:10px;width:100%;max-width:340px}
+.flash-btn{flex:1;padding:13px;border-radius:var(--radius-s);border:none;font-weight:700;font-size:14px;color:#fff}
+.flash-btn.hard{background:var(--danger)}
+.flash-btn.good{background:#4C8C56}
+.flash-hint{font-size:12.5px;color:var(--ink-soft);margin-bottom:8px}
+
+/* ---------- progress page ---------- */
+.progress-chapter-row{display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid var(--line)}
+.progress-chapter-row:last-child{border-bottom:none}
+.progress-bar-track{flex:1;height:8px;background:var(--line);border-radius:4px;overflow:hidden}
+.progress-bar-fill{height:100%;background:var(--teal)}
+.progress-label{font-size:13.5px;font-weight:700;width:110px;flex:none}
+.progress-pct{font-size:12.5px;color:var(--ink-soft);width:36px;text-align:left;flex:none;font-family:'JetBrains Mono',monospace}
+
+/* ---------- bottom nav ---------- */
+.bottomnav{
+  position:fixed;bottom:0;insetInlineStart:0;right:0;left:0;background:var(--surface);border-top:1px solid var(--line);
+  display:flex;z-index:40;padding-bottom:env(safe-area-inset-bottom)
+}
+.bottomnav button{
+  flex:1;background:none;border:none;padding:9px 4px 8px;display:flex;flex-direction:column;align-items:center;gap:3px;
+  color:var(--ink-soft);font-size:11px;font-weight:700
+}
+.bottomnav button.active{color:var(--copper-dark)}
+.bottomnav svg{width:21px;height:21px}
+
+@media (min-width:760px){ .wrap{padding-top:24px} }
+</style>
+</head>
+<body>
+
+<!-- ============ AUTH SCREEN ============ -->
+<div id="authScreen" class="auth-screen">
+  <div class="auth-hero">
+    <svg class="brand-mark" viewBox="0 0 48 48" fill="none"><rect width="48" height="48" rx="12" fill="#C1712F"/><path d="M24 8 L14 26 H22 L20 40 L34 20 H26 L28 8 Z" fill="#FFF"/></svg>
+    <h1>مذاكرة</h1>
+    <p>الفرقة الثانية علوم - قسم الكيمياء</p>
+  </div>
+  <div class="auth-card">
+    <div id="authError" class="auth-error hidden"></div>
+
+    <div id="loginForm">
+      <div class="field"><label>البريد الإلكتروني</label><input type="email" id="loginEmail" placeholder="example@mail.com"></div>
+      <div class="field"><label>كلمة المرور</label><input type="password" id="loginPass" placeholder="••••••••"></div>
+      <button class="btn-primary" id="loginBtn">تسجيل الدخول</button>
+      <div class="auth-switch">لسه معملتش حساب؟ <button id="toSignup">اعمل حساب</button></div>
+    </div>
+
+    <div id="signupForm" class="hidden">
+      <div class="field"><label>الاسم</label><input type="text" id="signupName" placeholder="اسمك بالكامل"></div>
+      <div class="field"><label>البريد الإلكتروني</label><input type="email" id="signupEmail" placeholder="example@mail.com"></div>
+      <div class="field"><label>كلمة المرور</label><input type="password" id="signupPass" placeholder="6 أحرف على الأقل"></div>
+      <button class="btn-primary" id="signupBtn">إنشاء الحساب</button>
+      <div class="auth-switch">عندك حساب بالفعل؟ <button id="toLogin">تسجيل الدخول</button></div>
+    </div>
+  </div>
+</div>
+
+<!-- ============ APP SHELL ============ -->
+<div id="appShell" class="hidden">
+  <div class="topbar">
+    <div class="brand">
+      <svg class="brand-mark" viewBox="0 0 48 48" fill="none"><rect width="48" height="48" rx="12" fill="#C1712F"/><path d="M24 8 L14 26 H22 L20 40 L34 20 H26 L28 8 Z" fill="#FFF"/></svg>
+      <div>مذاكرة<small>ثانية علوم - كيمياء</small></div>
+    </div>
+    <button class="icon-btn" id="logoutBtn" title="تسجيل الخروج">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="M16 17l5-5-5-5"/><path d="M21 12H9"/></svg>
+    </button>
+  </div>
+
+  <div class="wrap">
+    <!-- ---------- VIEW: dashboard ---------- -->
+    <div id="view-dashboard">
+      <p class="hello" id="helloName">أهلاً 👋</p>
+      <p class="hello-sub">يلا نكمل المذاكرة من حيث ما وقفت</p>
+
+      <div class="stat-row">
+        <div class="stat"><b id="statChapters">0/4</b><span>فصول متقنة</span></div>
+        <div class="stat"><b id="statQuizzes">0</b><span>اختبار اتحل</span></div>
+        <div class="stat"><b id="statVocab">0/37</b><span>مصطلح محفوظ</span></div>
+      </div>
+
+      <div class="trace-rule"><span class="trace-dot"></span></div>
+      <div class="section-title"><span class="trace-dot"></span>المواد النظرية</div>
+      <div id="theorySubjects"></div>
+
+      <div class="section-title"><span class="trace-dot"></span>المواد العملية</div>
+      <div id="practicalSubjects"></div>
+    </div>
+
+    <!-- ---------- VIEW: subject (chapters) ---------- -->
+    <div id="view-subject" class="hidden">
+      <button class="back-link" onclick="goDashboard()">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 6l6 6-6 6"/></svg>
+        رجوع للرئيسية
+      </button>
+      <p class="hello" id="subjectTitle">الفيزياء الكهربية</p>
+      <div class="tabbar">
+        <button id="tab-chapters" class="active" onclick="switchSubTab('chapters')">الفصول</button>
+        <button id="tab-vocab" onclick="switchSubTab('vocab')">مصطلحات</button>
+        <button id="tab-progress" onclick="switchSubTab('progress')">تقدمي</button>
+      </div>
+
+      <div id="subtab-chapters"><div id="chapterList"></div></div>
+
+      <div id="subtab-vocab" class="hidden"></div>
+
+      <div id="subtab-progress" class="hidden">
+        <div class="study-block">
+          <h3>نسبة إتقانك للفصول</h3>
+          <div id="progressBreakdown"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ---------- VIEW: study ---------- -->
+    <div id="view-study" class="hidden">
+      <button class="back-link" onclick="goSubject()">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 6l6 6-6 6"/></svg>
+        رجوع للفصول
+      </button>
+      <div id="studyContent"></div>
+      <button class="btn-primary" onclick="startQuiz(currentChapterId)" style="margin-top:6px">ابدأ اختبار الفصل ←</button>
+    </div>
+
+    <!-- ---------- VIEW: quiz ---------- -->
+    <div id="view-quiz" class="hidden">
+      <button class="back-link" onclick="goSubject()">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 6l6 6-6 6"/></svg>
+        خروج من الاختبار
+      </button>
+      <div class="quiz-progress-bar"><div class="quiz-progress-fill" id="quizProgressFill" style="width:0%"></div></div>
+      <div id="quizBody"></div>
+    </div>
+
+    <!-- ---------- VIEW: flashcards ---------- -->
+    <div id="view-flash" class="hidden">
+      <button class="back-link" onclick="goSubject()">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 6l6 6-6 6"/></svg>
+        رجوع
+      </button>
+      <div class="flash-stage">
+        <div class="flash-count" id="flashCount">1 / 37</div>
+        <div class="flashcard" id="flashcardEl" onclick="flipCard()">
+          <div class="flashcard-inner">
+            <div class="flashcard-face front"><div class="lbl">المصطلح بالإنجليزي</div><div class="term" id="flashTermEN"></div></div>
+            <div class="flashcard-face back"><div class="lbl">بالعربي</div><div class="term" id="flashTermAR"></div></div>
+          </div>
+        </div>
+        <p class="flash-hint">اضغط على الكارت عشان تشوف المعنى</p>
+        <div class="flash-actions">
+          <button class="flash-btn hard" onclick="rateCard(false)">لسه محتاج مراجعة</button>
+          <button class="flash-btn good" onclick="rateCard(true)">حفظته 👍</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="bottomnav">
+    <button class="active" id="nav-home" onclick="goDashboard()">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12l9-9 9 9"/><path d="M5 10v10h14V10"/></svg>
+      الرئيسية
+    </button>
+    <button id="nav-subject" onclick="goSubject()">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="4" width="16" height="16" rx="2"/><path d="M8 9h8M8 13h8M8 17h5"/></svg>
+      المادة
+    </button>
+  </div>
+</div>
+
+<script>
+/* =========================================================
+   إعداد Firebase
+   ========================================================= */
+const firebaseConfig = {
+  apiKey: "AIzaSyDtyoR3uh3Cb9jPy2nAvw2_4Ine6KVeeaw",
+  authDomain: "adminscriptstarko.firebaseapp.com",
+  databaseURL: "https://adminscriptstarko-default-rtdb.firebaseio.com",
+  projectId: "adminscriptstarko",
+  storageBucket: "adminscriptstarko.appspot.com",
+  messagingSenderId: "310036534754",
+  appId: "1:310036534754:web:chem-revision-site"
+};
+firebase.initializeApp(firebaseConfig);
+const auth = firebase.auth();
+const db = firebase.firestore();
+
+let currentUser = null;
+let userDoc = null; // { name, progress:{chapters:{id:{studied,quizBest,attempts}}, vocab:{id:{box,seen}}} }
+
+/* =========================================================
+   محتوى المادة: الفيزياء الكهربية (نظري)
+   ========================================================= */
+const ELECTRICAL_CHAPTERS = [
+  {
+    id: "ch1", num: 1, title: "مصادر الجهد والتيار",
+    sections: [
+      { h:"مصدر الجهد المثالي والحقيقي",
+        body:"مصدر الجهد المثالي هو مصدر جهد كهربي مقاومته الداخلية تساوي صفر (ri = 0)، وده أمر تقريبي مش موجود في الواقع. أما مصدر الجهد الحقيقي فله مقاومة داخلية ثابتة (ri ≠ 0)، ومهما كان الحمل المتصل بيه، جزء من الجهد بيسقط على المقاومة الداخلية دي.",
+        formula:"I = E / (R_L + r_i)  ,  V = E − I·r_i = I·R_L",
+        note:"مثال: بطارية فلاش مقاومتها الداخلية أقل من 1Ω، بينما بطارية السيارة أقل من 0.01Ω تقريبًا - كل ما قلّت المقاومة الداخلية كل ما كان المصدر أقرب للمثالية." },
+      { h:"مصدر الجهد القوي (Strong Voltage Source)",
+        body:"هو المصدر اللي مقاومته الداخلية أصغر بـ100 مرة على الأقل من مقاومة الحمل الخارجي (ri < 0.01 RL)، وده معناه إن جهده يفضل شبه ثابت مهما اتغير الحمل.",
+        formula:"r_i < 0.01 × R_L" },
+      { h:"مصدر التيار وأنواعه",
+        body:"مصدر التيار هو جهاز يجهز الدائرة بتيار ثابت مش بيتأثر بالحمل المتصل بيه، وده عكس مصدر الجهد في السلوك. الفرق الأساسي: مصدر الجهد له مقاومة داخلية صغيرة جدًا، أما مصدر التيار فله مقاومة داخلية كبيرة جدًا.",
+        formula:"مصدر التيار القوي: R_i ≥ 100 × R_L" },
+      { h:"توصيل مصادر الجهد والتيار",
+        body:"عند توصيل مصادر جهد على التوالي: المصادر المتشابهة في الاتجاه تُجمع، والمختلفة تُطرح مع أخذ إشارة الأكبر. أما مصادر التيار على التوازي فبنفس المنطق: نفس الاتجاه تُجمع، عكس الاتجاه تُطرح ونأخذ إشارة الأكبر - وشرط استخدام هذا التوصيل أن يكون لكل مصدر تيار ثابت مختلف وجهد متساوٍ." },
+      { h:"قانون مجزئ الجهد (Voltage Divider Rule)",
+        body:"يُستخدم في دوائر التوالي لحساب الجهد الساقط على أي مقاومة من مجموعة مقاومات على التوالي، بدون الحاجة لحساب التيار أولًا.",
+        formula:"V_x = (E / R_T) × R_x" },
+      { h:"قانون مجزئ التيار (Current Divider Rule)",
+        body:"يُستخدم في دوائر التوازي لحساب التيار المار في أحد الفروع، بمعرفة التيار الكلي ومقاومة الفرع.",
+        formula:"I_x = I_T × (مقاومة الفرع الآخر / مجموع المقاومتين)" }
+    ]
+  },
+  {
+    id: "ch2", num: 2, title: "تحليل الدوائر الكهربية",
+    sections: [
+      { h:"قانون كيرشوف للجهد (KVL)",
+        body:"في أي مسار مغلق، مجموع الجهود الجبري يساوي صفرًا. يعني القوة الدافعة الكهربية بتساوي مجموع الهبوط في الجهد على كل عناصر المسار.",
+        formula:"Σ V = 0   ⇒   Σ V_rises = Σ V_drop" },
+      { h:"قانون كيرشوف للتيار (KCL)",
+        body:"مجموع التيارات الداخلة لأي نقطة تفرع (عقدة) يساوي مجموع التيارات الخارجة منها - لأن الشحنة لا تتراكم عند نقطة التفرع.",
+        formula:"Σ I(داخلة) = Σ I(خارجة)" },
+      { h:"نظرية التراكيب (Superposition Theorem)",
+        body:"في دائرة فيها أكتر من مصدر، بنحسب تأثير كل مصدر لوحده (بعد إلغاء باقي المصادر) ثم نجمع النتائج جبريًا. لإلغاء مصدر جهد: نستبدله بدائرة قصر (short circuit). لإلغاء مصدر تيار: نستبدله بدائرة مفتوحة (open circuit)." },
+      { h:"نظرية ثيفينين (Thevenin's Theorem)",
+        body:"أي شبكة كهربية معقدة ذات طرفين ممكن تُختصر في دائرة واحدة بسيطة: مصدر جهد واحد (E_Th) على التوالي مع مقاومة واحدة (R_Th).",
+        formula:"خطوات الحل: 1) افصل الحمل  2) احسب R_Th (بعد إلغاء المصادر)  3) احسب E_Th = V_ab بين الطرفين  4) I_L = E_Th / (R_Th + R_L)" },
+      { h:"نظرية نورتن (Norton's Theorem)",
+        body:"هي الوجه الآخر لنظرية ثيفينين، بس بدل ما نمثل الشبكة بمصدر جهد ومقاومة على التوالي، بنمثلها بمصدر تيار (I_N) ومقاومة (R_N) على التوازي. وR_N بتساوي R_Th بالظبط." }
+    ]
+  },
+  {
+    id: "ch3", num: 3, title: "دوائر التيار المتردد",
+    sections: [
+      { h:"الفرق بين DC و AC",
+        body:"التيار المستمر (DC) ثابت الشدة ويمشي في اتجاه واحد بس. أما التيار المتردد (AC) فبيغيّر اتجاهه وقيمته بشكل دوري على هيئة موجة جيبية (Sine Wave) - وهو اللي بيوصل لبيوتنا لأنه أسهل في النقل لمسافات بعيدة عن طريق المحولات." },
+      { h:"القيمة الفعالة RMS",
+        body:"لو حسبنا متوسط التيار المتردد خلال دورة كاملة هيطلع صفر (لأنه نصه موجب ونصه سالب)، بس ده مش معناه إنه معندوش تأثير حراري حقيقي. القيمة الفعالة (RMS) هي قيمة التيار المستمر المكافئ الذي يعطي نفس التأثير الحراري.",
+        formula:"V_rms = 0.707 × V_max   ,   I_rms = 0.707 × I_max",
+        note:"كل أجهزة القياس (الأميتر والفولتميتر) بتقيس القيمة الفعالة (RMS) مش القيمة العظمى." },
+      { h:"المقاومة R في دائرة تيار متردد",
+        body:"الجهد والتيار في عنصر المقاومة بيكونوا متوافقين تمامًا في الطور (In Phase) - يعني بيوصلوا للقيمة العظمى مع بعض، وللصفر مع بعض. فرق الطور بينهم = صفر.",
+        formula:"V = I·R" },
+      { h:"المكثف في دائرة تيار متردد",
+        body:"المكثف يخزّن شحنة، وعشان يتكون فرق جهد على طرفيه لازم التيار يمشي الأول ويشحن ألواحه. النتيجة: التيار يسبق الجهد بزاوية 90°. مقاومة المكثف لمرور التيار المتردد بتسمى المفاعلة السعوية.",
+        formula:"X_C = 1 / (2πfC)",
+        note:"علاقة عكسية مع التردد: كل ما زاد التردد، قلّت المفاعلة السعوية وزاد التيار." },
+      { h:"الملف في دائرة تيار متردد",
+        body:"عكس المكثف تمامًا: الملف بيقاوم أي تغيير في التيار بسبب الحث الذاتي، فالجهد يظهر على طرفيه قبل ما التيار يمشي بكامل قوته. النتيجة: الجهد يسبق التيار بزاوية 90°.",
+        formula:"X_L = 2πfL",
+        note:"علاقة طردية مع التردد: كل ما زاد التردد، زادت المفاعلة الحثية وقلّ التيار." },
+      { h:"الدائرة المجتمعة RLC والمعاوقة",
+        body:"لما R وL وC يتجمعوا في دائرة واحدة، مبنقدرش نجمع مقاوماتهم جمع عادي لاختلاف الطور بينهم، فبنستخدم كمية جديدة اسمها المعاوقة الكلية (Impedance) Z.",
+        formula:"Z = √(R² + (X_L − X_C)²)   ,   tan(φ) = (X_L − X_C)/R" },
+      { h:"حالة الرنين (Resonance)",
+        body:"أهم نقطة في الباب: بتحصل عند تردد معين (fr) بحيث تتساوى المفاعلة الحثية مع السعوية فتلغي كل واحدة تأثير التانية. النتيجة: أقل معاوقة ممكنة (Z=R فقط)، وأكبر تيار ممكن، وفرق الطور بين الجهد والتيار = صفر.",
+        formula:"X_L = X_C   ⇒   f_r = 1 / (2π√(LC))" },
+      { h:"المحول الكهربائي (Transformer)",
+        body:"جهاز يشتغل بالتيار المتردد فقط، بيتكون من ملفين (ابتدائي وثانوي) حول قلب حديدي. المحول الرافع للجهد (Step-up) عدد لفات ثانويه أكبر من الابتدائي، والمحول الخافض (Step-down) العكس.",
+        formula:"V_s / V_p = N_s / N_p" },
+      { h:"القدرة في دوائر التيار المتردد",
+        body:"مش كل القدرة اللي بتمشي في الدائرة بنستفاد بيها؛ المقاومة بس هي اللي بتستهلك طاقة فعليًا (قدرة حقيقية)، أما الملف والمكثف فبيرجعوا الطاقة للمصدر تاني (قدرة غير فعالة). معامل القدرة cos(φ) كل ما اقترب من 1 كل ما كانت كفاءة الدائرة أعلى.",
+        formula:"P = V_rms × I_rms × cos(φ)" }
+    ]
+  },
+  {
+    id: "ch4", num: 4, title: "أشباه الموصلات",
+    sections: [
+      { h:"من النحاس للسيليكون",
+        body:"النحاس موصل ممتاز لأن ذرته لها إلكترون واحد ضعيف الارتباط بالمدار الأخير، بيتحرر بسهولة وبيكوّن التيار الكهربي. السيليكون (Si) مختلف: مداره الأخير فيه 4 إلكترونات تكافؤ بالظبط - مش قليلة زي الموصلات ولا كتيرة زي العوازل، وده اللي بيخليه 'شبه موصل'." },
+      { h:"البلورة النقية وتوليد أزواج إلكترون-فجوة",
+        body:"ذرات السيليكون بتتشارك إلكتروناتها مع جيرانها في روابط تساهمية وتكوّن بلورة منتظمة. عند الصفر المطلق تكون كل الإلكترونات محبوسة في الروابط ولا يوجد تيار. لما ترتفع الحرارة، بعض الروابط بتتكسر ويتحرر إلكترون حر، ويترك مكانه فجوة (منطقة موجبة الشحنة تقريبًا). عدد الإلكترونات الحرة دائمًا يساوي عدد الفجوات في البلورة النقية.",
+        note:"كل ما زادت الحرارة، زاد عدد أزواج الإلكترون-الفجوة بنفس المقدار." },
+      { h:"التطعيم (Doping): النوع n والنوع p",
+        body:"البلورة النقية توصيلها ضعيف وغير متحكم فيه. التطعيم هو إضافة كمية صغيرة من شوائب عنصر آخر للتحكم في التوصيل.\n• النوع n: نضيف عنصر خماسي التكافؤ (مثل الفوسفور P) - كل ذرة شائبة تديها إلكترون حر زيادة، فتكون الأغلبية إلكترونات حرة.\n• النوع p: نضيف عنصر ثلاثي التكافؤ (مثل البورون B) - كل ذرة شائبة تخلق فجوة زيادة، فتكون الأغلبية فجوات.",
+        note:"في النوع n: الإلكترونات حاملات الأغلبية والفجوات حاملات الأقلية. في النوع p: العكس." },
+      { h:"الوصلة الثنائية PN (الدايود)",
+        body:"لما نلزق بلوك n ببلوك p، بيحصل انتشار (Diffusion) للحاملات عبر الحدود ثم التحام (Recombination) بينها، وده بيكوّن منطقة نضوب (Depletion Region) خالية من الحاملات الحرة، وحاجز جهد يمنع أي عبور إضافي.",
+        formula:"حاجز الجهد: 0.7V للسيليكون  ,  0.3V للجرمانيوم" },
+      { h:"الانحياز الأمامي والعكسي",
+        body:"الانحياز الأمامي (Forward Bias): نوصل القطب الموجب للبطارية بمنطقة p والسالب بمنطقة n - ده بيضيّق منطقة النضوب ويسمح بمرور تيار كبير (الدايود يشتغل كمفتاح مقفول ON).\nالانحياز العكسي (Reverse Bias): نعكس التوصيل - ده بيوسّع منطقة النضوب ويمنع مرور التيار (الدايود يشتغل كمفتاح مفتوح OFF)، ما عدا تيار تسرب صغير جدًا." },
+      { h:"تيارات التسرب العكسي",
+        body:"حتى في الانحياز العكسي، يمر تيار صغير جدًا مصدره اتنين:\n• تيار التشبع (Saturation Current, Is): مصدره حاملات الأقلية، ويعتمد على الحرارة فقط (مش على الجهد).\n• تيار التسرب السطحي: مصدره شوائب على سطح البلورة، ويعتمد على جهد البطارية (كلما زاد الجهد العكسي زاد هذا التيار)." },
+      { h:"نقطة الانهيار (Breakdown)",
+        body:"لو زوّدنا الجهد العكسي أوي، الدايود بينهار فجأة ويمرر تيار كبير، لسببين:\n• تأثير زينر: بيحصل عند جهد منخفض (أقل من 4 فولت) في الدايودات عالية التطعيم.\n• تأثير الانهيار الجسيمي (Avalanche): بيحصل عند جهد عالي (أكبر من 6 فولت) نتيجة تصادمات متتالية بين الإلكترونات المتسارعة." }
+    ]
+  }
+];
+
+/* =========================================================
+   بنك أسئلة الفيزياء الكهربية (نظري) - 10 أسئلة لكل فصل
+   ========================================================= */
+const ELECTRICAL_QUIZZES = {
+  ch1: [
+    { q:"مصدر الجهد المثالي هو مصدر مقاومته الداخلية:", opts:["ثابتة وكبيرة","تساوي صفر","تعتمد على الحمل","لا نهائية"], a:1, ex:"مصدر الجهد المثالي: r_i = 0، وهذا افتراض تقريبي غير موجود فعليًا." },
+    { q:"التيار الناتج من مصدر تيار مثالي هو:", opts:["يعتمد على مقاومة الحمل","صفر دائمًا","ثابت بغض النظر عن الحمل","يساوي الجهد مقسومًا على المقاومة"], a:2, ex:"مصدر التيار المثالي بيدي تيار ثابت مهما اختلفت مقاومة الحمل، لأن مقاومته الداخلية لا نهائية تقريبًا." },
+    { q:"مصدر الجهد القوي هو الذي تكون مقاومته الداخلية:", opts:["أكبر بـ100 مرة من مقاومة الحمل","أقل بـ100 مرة من مقاومة الحمل","تساوي مقاومة الحمل","غير معروفة"], a:1, ex:"الشرط: r_i < 0.01 × R_L حتى يبقى الجهد شبه ثابت." },
+    { q:"عند توصيل مصدرين جهد على التوالي متعاكسين في الاتجاه (9V و 4V)، الجهد الناتج:", opts:["13V","5V","2.25V","36V"], a:1, ex:"المصادر المتعاكسة تُطرح: 9 − 4 = 5V، وناخد إشارة الأكبر." },
+    { q:"قانون مجزئ الجهد يُستخدم في:", opts:["دوائر التوازي فقط","دوائر التوالي فقط","أي دائرة بشكل عام","دوائر مصادر التيار فقط"], a:1, ex:"V_x = (E/R_T)×R_x يُستخدم لحساب الجهد على مقاومة معينة في دائرة توالي." },
+    { q:"لتوصيل مصادر تيار على التوازي بشكل صحيح، يشترط أن يكون:", opts:["جهدهم مختلف وتيارهم متساوٍ","جهدهم متساوٍ واتجاههم مختلف فقط","اتجاههم متساوٍ فقط","لا يشترط شيء"], a:1, ex:"يشترط تأكد أن جهدهم متساويين، والمصادر في نفس الاتجاه تُجمع والعكس تُطرح." },
+    { q:"في دائرة R1=60Ω, R2=30Ω, R3=10Ω على التوالي مع مصدر E=20V، الجهد على R1 (V1) يساوي:", opts:["2V","6V","12V","20V"], a:2, ex:"V1 = (20/100)×60 = 12V وفق قانون مجزئ الجهد." },
+    { q:"مصدر جهد إنتاج ثابت هو المصدر الذي تكون مقاومته الداخلية:", opts:["كبيرة جدًا","منخفضة جدًا مقارنة بمقاومة الحمل","تساوي مقاومة الحمل","صفرًا بالضبط"], a:1, ex:"يُعرف بأنه المصدر ذو المقاومة الداخلية المنخفضة جدًا مقارنة بمقاومة الحمل الخارجي." },
+    { q:"الفرق الأساسي بين مصدر الجهد ومصدر التيار من حيث المقاومة الداخلية:", opts:["كلاهما له نفس المقاومة","مصدر الجهد مقاومته صغيرة، مصدر التيار مقاومته كبيرة","مصدر الجهد مقاومته كبيرة، مصدر التيار صغيرة","لا علاقة للمقاومة بالموضوع"], a:1, ex:"مصدر الجهد: مقاومة داخلية صغيرة جدًا. مصدر التيار: مقاومة داخلية كبيرة جدًا." },
+    { q:"عند توصيل مصدري تيار متوازيين بنفس الاتجاه (7A و 4A)، التيار الكلي:", opts:["3A","11A","28A","1.75A"], a:1, ex:"المصادر بنفس الاتجاه تُجمع: 7 + 4 = 11A." }
+  ],
+  ch2: [
+    { q:"قانون كيرشوف للجهد ينص على أن مجموع الجهود في أي مسار مغلق:", opts:["يساوي التيار الكلي","يساوي صفرًا","يساوي المقاومة الكلية","يعتمد على عدد المقاومات"], a:1, ex:"Σ V = 0 في أي مسار مغلق (حلقة كهربية)." },
+    { q:"قانون كيرشوف للتيار يعتمد على مبدأ:", opts:["حفظ الطاقة","حفظ الشحنة","حفظ الجهد","حفظ المقاومة"], a:1, ex:"KCL أساسه أن الشحنة لا تتراكم عند نقطة التفرع - حفظ الشحنة." },
+    { q:"عند تطبيق نظرية التراكيب، لإلغاء مصدر جهد نستبدله بـ:", opts:["دائرة مفتوحة","دائرة قصر (short circuit)","مقاومة كبيرة جدًا","مصدر تيار"], a:1, ex:"مصدر الجهد يُلغى بدائرة قصر، بينما مصدر التيار يُلغى بدائرة مفتوحة." },
+    { q:"في دائرة فيها E=30V على التوازي مع مصدر تيار I=3A ومقاومة R=6Ω، التيار الكلي المار في R بنظرية التراكيب (5A من الجهد + 0A من التيار):", opts:["8A","5A","3A","2A"], a:1, ex:"I1' = 30/6 = 5A من تأثير الجهد، I1'' = 0A من تأثير التيار (لأنه يأخذ دائرة القصر). المجموع = 5A." },
+    { q:"نظرية ثيفينين تختصر أي شبكة خطية إلى:", opts:["مقاومتين على التوازي","مصدر جهد واحد ومقاومة واحدة على التوالي","مصدر تيار ومقاومتين","لا شيء مما سبق"], a:1, ex:"الدائرة المكافئة لثيفينين: E_Th على التوالي مع R_Th." },
+    { q:"لإيجاد R_Th نقوم بإزالة الحمل ثم:", opts:["نبقي كل المصادر كما هي","نلغي كل المصادر (قصر للجهد، فتح للتيار) ونحسب المقاومة المكافئة","نحسب التيار الكلي","نحسب الجهد بين الطرفين"], a:1, ex:"R_Th تُحسب بعد إلغاء تأثير جميع المصادر الداخلية للشبكة." },
+    { q:"E_Th يساوي:", opts:["التيار الكلي في الدائرة","الجهد بين طرفي الحمل بعد فصله (V_ab)","مجموع كل المقاومات","صفر دائمًا"], a:1, ex:"E_Th = V_ab هو فرق الجهد بين النقطتين بعد فصل الحمل، مع بقاء المصادر في مكانها." },
+    { q:"نظرية نورتن هي المكافئ لنظرية ثيفينين لكن باستخدام:", opts:["مصدر جهد ومقاومة على التوالي","مصدر تيار ومقاومة على التوازي","مقاومتين فقط","مكثف بدل المقاومة"], a:1, ex:"نورتن: I_N مع R_N على التوازي، وR_N = R_Th." },
+    { q:"عند عقدة كهربية، إذا دخلها تياران 2A و3A وخرج منها تيار واحد فقط، فإن قيمته:", opts:["1A","5A","6A","0A"], a:1, ex:"طبقًا لـ KCL: التيار الخارج = مجموع الداخل = 2+3 = 5A." },
+    { q:"في مسار مغلق فيه مصدر E=10V ومقاومتان أسقط عليهما 5V و2V، فإن الهبوط على المقاومة الثالثة V3:", opts:["7V","3V","17V","10V"], a:1, ex:"V3 = E − V1 − V2 = 10 − 5 − 2 = 3V." }
+  ],
+  ch3: [
+    { q:"التيار المتردد (AC) يتميز بأن قيمته واتجاهه:", opts:["ثابتان دائمًا","يتغيران بشكل دوري","يتغير الاتجاه فقط دون القيمة","لا شيء مما سبق"], a:1, ex:"AC يتغير قيمة واتجاهًا بشكل دوري على هيئة موجة جيبية." },
+    { q:"القيمة الفعالة (RMS) للتيار المتردد تساوي:", opts:["القيمة العظمى","0.707 من القيمة العظمى","نصف القيمة العظمى","القيمة العظمى مضروبة في 2"], a:1, ex:"I_rms = 0.707 × I_max = I_max/√2." },
+    { q:"في دائرة تحتوي على مقاومة فقط في تيار متردد، فرق الطور بين الجهد والتيار:", opts:["90 درجة","صفر","180 درجة","45 درجة"], a:1, ex:"الجهد والتيار في المقاومة يكونان متفقين في الطور تمامًا (In Phase)." },
+    { q:"في دائرة بها مكثف فقط، العلاقة بين الجهد والتيار:", opts:["الجهد يسبق التيار بـ90°","التيار يسبق الجهد بـ90°","متفقان في الطور","التيار يسبق الجهد بـ45°"], a:1, ex:"في المكثف: التيار يسبق الجهد بزاوية 90° لأن الشحن يحتاج مرور تيار أولًا." },
+    { q:"المفاعلة الحثية X_L تتناسب طرديًا مع:", opts:["التردد","المقاومة","السعة","الجهد فقط"], a:0, ex:"X_L = 2πfL؛ علاقة طردية مع التردد f." },
+    { q:"المفاعلة السعوية X_C تتناسب عكسيًا مع:", opts:["السعة والتردد معًا","المقاومة فقط","الجهد فقط","لا تتأثر بأي شيء"], a:0, ex:"X_C = 1/(2πfC)، فكلما زاد التردد أو السعة قلّت X_C." },
+    { q:"حالة الرنين تحدث عندما:", opts:["R = 0","X_L = X_C","X_L = 0","X_C = R"], a:1, ex:"عند الرنين تتساوى المفاعلتان الحثية والسعوية، فتلغي كل واحدة تأثير الأخرى." },
+    { q:"عند الرنين، تكون المعاوقة الكلية Z:", opts:["أكبر ما يمكن","أقل ما يمكن وتساوي R فقط","تساوي صفرًا","لا نهائية"], a:1, ex:"عند الرنين Z = R فقط (أقل قيمة ممكنة) والتيار يكون أكبر ما يمكن." },
+    { q:"المحول الرافع للجهد (Step-up) يتميز بأن:", opts:["Ns أقل من Np","Ns أكبر من Np","Ns = Np","لا علاقة لعدد اللفات"], a:1, ex:"في المحول الرافع: عدد لفات الملف الثانوي (Ns) أكبر من الابتدائي (Np)." },
+    { q:"القدرة الحقيقية المستهلكة في دائرة تيار متردد تحدث فقط في:", opts:["الملف","المكثف","المقاومة","كل العناصر بالتساوي"], a:2, ex:"المقاومة فقط هي التي تحوّل الطاقة الكهربية لحرارة أو ضوء بشكل دائم (قدرة فعالة)." }
+  ],
+  ch4: [
+    { q:"عدد إلكترونات التكافؤ في ذرة السيليكون:", opts:["1","3","4","5"], a:2, ex:"السيليكون رباعي التكافؤ (4 إلكترونات في المدار الأخير)، وهذا سر كونه شبه موصل." },
+    { q:"عند تسخين بلورة سيليكون نقية، عدد الإلكترونات الحرة الناتجة يكون:", opts:["أكبر من عدد الفجوات","أقل من عدد الفجوات","يساوي عدد الفجوات دائمًا","لا علاقة بينهما"], a:2, ex:"كل إلكترون حر يترك فجوة مكانه، فعددهما متساوٍ دائمًا في البلورة النقية." },
+    { q:"لتكوين شبه موصل من النوع n، نضيف شوائب من عنصر:", opts:["ثلاثي التكافؤ","رباعي التكافؤ","خماسي التكافؤ","أحادي التكافؤ"], a:2, ex:"العنصر الخماسي (مثل الفوسفور) يعطي إلكترونًا حرًا زيادة، فيتكون النوع n (Negative)." },
+    { q:"في شبه الموصل من النوع p، حاملات الأغلبية هي:", opts:["الإلكترونات الحرة","الفجوات","البروتونات","الأيونات السالبة"], a:1, ex:"النوع p ناتج عن تطعيم بعنصر ثلاثي التكافؤ يخلق فجوات، وهي حاملات الأغلبية هنا." },
+    { q:"منطقة النضوب (Depletion Region) تتكون نتيجة:", opts:["ارتفاع درجة الحرارة فقط","الانتشار ثم الالتحام بين الإلكترونات والفجوات عند الوصلة","تطعيم زائد بعنصر رباعي","تبريد البلورة"], a:1, ex:"عند التقاء النوعين n وp يحدث انتشار للحاملات ثم التحام يكوّن منطقة خالية من الحاملات الحرة." },
+    { q:"قيمة حاجز الجهد التقريبية لدايود السيليكون:", opts:["0.3 فولت","0.7 فولت","1.4 فولت","2.1 فولت"], a:1, ex:"حاجز جهد السيليكون ≈ 0.7V، والجرمانيوم ≈ 0.3V." },
+    { q:"في الانحياز الأمامي للدايود، نوصل القطب الموجب للبطارية بمنطقة:", opts:["n","p","الاثنين معًا","لا فرق"], a:1, ex:"الانحياز الأمامي: الموجب على p والسالب على n، مما يضيّق منطقة النضوب ويسمح بمرور التيار." },
+    { q:"تيار التشبع (Saturation Current) يعتمد بشكل أساسي على:", opts:["جهد البطارية فقط","درجة الحرارة فقط","المقاومة الخارجية","نوع التوصيل فقط"], a:1, ex:"مصدره حاملات الأقلية، وهذه تتولد بالحرارة فقط، فلا يعتمد على الجهد." },
+    { q:"تأثير زينر يحدث عادة عند جهد عكسي:", opts:["أكبر من 6 فولت","أقل من 4 فولت","يساوي صفر","أكبر من 100 فولت"], a:1, ex:"تأثير زينر يحدث عند جهد منخفض (أقل من 4V تقريبًا) في الدايودات عالية التطعيم." },
+    { q:"تأثير الانهيار الجسيمي (Avalanche) سببه:", opts:["ارتفاع مقاومة السطح فقط","تصادمات متتالية للإلكترونات المتسارعة بجهد عالٍ","انخفاض درجة الحرارة","نقص التطعيم"], a:1, ex:"عند جهد عكسي عالٍ (>6V)، تتسارع الإلكترونات وتصطدم بذرات أخرى محررة إلكترونات جديدة تباعًا (كرة الثلج)." }
+  ]
+};
+
+/* =========================================================
+   مصطلحات الفيزياء الكهربية (بطاقات حفظ)
+   ========================================================= */
+const ELECTRICAL_VOCAB = [
+  ["Voltage Source","مصدر الجهد"], ["Current Source","مصدر التيار"],
+  ["Internal Resistance","المقاومة الداخلية"], ["Voltage Divider Rule","قانون مجزئ الجهد"],
+  ["Current Divider Rule","قانون مجزئ التيار"], ["Kirchhoff's Voltage Law","قانون كيرشوف للجهد"],
+  ["Kirchhoff's Current Law","قانون كيرشوف للتيار"], ["Superposition Theorem","نظرية التراكيب"],
+  ["Thevenin's Theorem","نظرية ثيفينين"], ["Norton's Theorem","نظرية نورتن"],
+  ["Alternating Current","التيار المتردد"], ["Direct Current","التيار المستمر"],
+  ["RMS Value","القيمة الفعالة"], ["Reactance","المفاعلة"],
+  ["Capacitive Reactance","المفاعلة السعوية"], ["Inductive Reactance","المفاعلة الحثية"],
+  ["Impedance","المعاوقة الكلية"], ["Phase Angle","زاوية الطور"],
+  ["Resonance","الرنين"], ["Transformer","المحول الكهربائي"],
+  ["Power Factor","معامل القدرة"], ["Step-up Transformer","محول رافع للجهد"],
+  ["Step-down Transformer","محول خافض للجهد"], ["Semiconductor","شبه الموصل"],
+  ["Doping","التطعيم"], ["n-type","نوع سالب"], ["p-type","نوع موجب"],
+  ["PN Junction","الوصلة الثنائية"], ["Depletion Region","منطقة النضوب"],
+  ["Barrier Potential","حاجز الجهد"], ["Forward Bias","الانحياز الأمامي"],
+  ["Reverse Bias","الانحياز العكسي"], ["Saturation Current","تيار التشبع"],
+  ["Surface Leakage Current","تيار التسرب السطحي"], ["Zener Effect","تأثير زينر"],
+  ["Avalanche Effect","تأثير الانهيار الجسيمي"], ["Diode","الدايود"]
+].map((v,i)=>({id:"v"+i, en:v[0], ar:v[1]}));
+
+/* =========================================================
+   خريطة المواد (نظري / عملي) - الفيزياء الكهربية مفعّلة، الباقي قريبًا
+   ========================================================= */
+const SUBJECTS_THEORY = [
+  { id:"electrical-physics", name:"الفيزياء الكهربية", icon:"⚡", active:true, chapters:ELECTRICAL_CHAPTERS, quizzes:ELECTRICAL_QUIZZES, vocab:ELECTRICAL_VOCAB },
+  { id:"organic-chemistry", name:"الكيمياء العضوية", icon:"🧪", active:false },
+  { id:"thermodynamics", name:"الديناميكا الحرارية", icon:"🔥", active:false },
+  { id:"calculus", name:"تفاضل وتكامل", icon:"∫", active:false },
+  { id:"linear-algebra", name:"جبر خطي", icon:"▦", active:false }
+];
+const SUBJECTS_PRACTICAL = [
+  { id:"electrical-physics-lab", name:"الفيزياء الكهربية", icon:"⚡", active:false },
+  { id:"organic-chemistry-lab", name:"الكيمياء العضوية", icon:"🧪", active:false },
+  { id:"thermodynamics-lab", name:"الديناميكا الحرارية", icon:"🔥", active:false }
+];
+
+/* =========================================================
+   حالة التطبيق
+   ========================================================= */
+let currentSubject = null;
+let currentChapterId = null;
+let quizState = null; // {list, idx, correct, answered}
+let vocabQueue = [];
+let vocabIdx = 0;
+
+/* ---------- عرض/إخفاء الشاشات ---------- */
+function showView(id){
+  ["view-dashboard","view-subject","view-study","view-quiz","view-flash"].forEach(v=>{
+    document.getElementById(v).classList.toggle("hidden", v!==id);
+  });
+  document.getElementById("nav-home").classList.toggle("active", id==="view-dashboard");
+  document.getElementById("nav-subject").classList.toggle("active", id!=="view-dashboard");
+}
+
+/* ---------- Auth ---------- */
+document.getElementById("toSignup").onclick = ()=>{ toggleAuthForm(true); };
+document.getElementById("toLogin").onclick = ()=>{ toggleAuthForm(false); };
+function toggleAuthForm(signup){
+  document.getElementById("loginForm").classList.toggle("hidden", signup);
+  document.getElementById("signupForm").classList.toggle("hidden", !signup);
+  hideAuthError();
+}
+function showAuthError(msg){ const e=document.getElementById("authError"); e.textContent=msg; e.classList.remove("hidden"); }
+function hideAuthError(){ document.getElementById("authError").classList.add("hidden"); }
+
+document.getElementById("signupBtn").onclick = async ()=>{
+  const name = document.getElementById("signupName").value.trim();
+  const email = document.getElementById("signupEmail").value.trim();
+  const pass = document.getElementById("signupPass").value;
+  if(!name || !email || pass.length<6){ showAuthError("من فضلك املأ كل الحقول (كلمة المرور 6 أحرف على الأقل)"); return; }
+  try{
+    const cred = await auth.createUserWithEmailAndPassword(email, pass);
+    await cred.user.updateProfile({displayName:name});
+    await db.collection("users").doc(cred.user.uid).set({
+      name, email, createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+      progress: { chapters:{}, vocab:{} }
+    });
+  }catch(err){ showAuthError(translateAuthError(err)); }
+};
+document.getElementById("loginBtn").onclick = async ()=>{
+  const email = document.getElementById("loginEmail").value.trim();
+  const pass = document.getElementById("loginPass").value;
+  if(!email || !pass){ showAuthError("من فضلك اكتب البريد وكلمة المرور"); return; }
+  try{ await auth.signInWithEmailAndPassword(email, pass); }
+  catch(err){ showAuthError(translateAuthError(err)); }
+};
+document.getElementById("logoutBtn").onclick = ()=> auth.signOut();
+
+function translateAuthError(err){
+  const c = err.code||"";
+  if(c.includes("email-already-in-use")) return "البريد الإلكتروني ده متسجل قبل كده";
+  if(c.includes("invalid-email")) return "البريد الإلكتروني غير صحيح";
+  if(c.includes("weak-password")) return "كلمة المرور ضعيفة، لازم تكون 6 أحرف على الأقل";
+  if(c.includes("user-not-found") || c.includes("wrong-password") || c.includes("invalid-credential")) return "البريد أو كلمة المرور غلط";
+  return "حصل خطأ، حاول تاني";
+}
+
+auth.onAuthStateChanged(async (user)=>{
+  if(user){
+    currentUser = user;
+    const snap = await db.collection("users").doc(user.uid).get();
+    userDoc = snap.exists ? snap.data() : { name:user.displayName||"", progress:{chapters:{},vocab:{}} };
+    if(!userDoc.progress) userDoc.progress = {chapters:{}, vocab:{}};
+    document.getElementById("authScreen").classList.add("hidden");
+    document.getElementById("appShell").classList.remove("hidden");
+    document.getElementById("helloName").textContent = "أهلاً " + (userDoc.name||"") + " 👋";
+    renderDashboard();
+  } else {
+    currentUser = null; userDoc = null;
+    document.getElementById("appShell").classList.add("hidden");
+    document.getElementById("authScreen").classList.remove("hidden");
+  }
+});
+
+async function saveProgress(){
+  if(!currentUser) return;
+  await db.collection("users").doc(currentUser.uid).set({ progress: userDoc.progress }, { merge:true });
+}
+
+/* ---------- Dashboard ---------- */
+function renderDashboard(){
+  showView("view-dashboard");
+  const chSnap = allChaptersFlat();
+  const studied = chSnap.filter(c=> userDoc.progress.chapters[c.id] && userDoc.progress.chapters[c.id].studied).length;
+  document.getElementById("statChapters").textContent = studied+"/"+chSnap.length;
+  let attempts=0; Object.values(userDoc.progress.chapters||{}).forEach(c=>attempts+=(c.attempts||0));
+  document.getElementById("statQuizzes").textContent = attempts;
+  const vocabDone = Object.values(userDoc.progress.vocab||{}).filter(v=>v.box>=2).length;
+  document.getElementById("statVocab").textContent = vocabDone+"/"+ELECTRICAL_VOCAB.length;
+
+  const theoryEl = document.getElementById("theorySubjects"); theoryEl.innerHTML="";
+  SUBJECTS_THEORY.forEach(s=> theoryEl.appendChild(subjectCard(s)));
+  const pracEl = document.getElementById("practicalSubjects"); pracEl.innerHTML="";
+  SUBJECTS_PRACTICAL.forEach(s=> pracEl.appendChild(subjectCard(s)));
+}
+function allChaptersFlat(){
+  let arr=[];
+  SUBJECTS_THEORY.forEach(s=>{ if(s.chapters) arr = arr.concat(s.chapters); });
+  return arr;
+}
+function subjectCard(s){
+  const card = document.createElement("div");
+  card.className = "subject-card"+(s.active?"":" locked");
+  card.innerHTML = `
+    <div class="subject-badge">${s.icon}</div>
+    <div class="subject-info">
+      <h3>${s.name}</h3>
+      ${s.active ? `<span class="chip">${s.chapters.length} فصول متاحة</span>` : `<p>هنضيفها في الجلسات الجاية</p><span class="chip soon">قريبًا</span>`}
+    </div>
+    <svg class="arrow" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 6l-6 6 6 6"/></svg>
+  `;
+  if(s.active) card.onclick = ()=> openSubject(s);
+  return card;
+}
+
+/* ---------- Subject page ---------- */
+function openSubject(s){
+  currentSubject = s;
+  document.getElementById("subjectTitle").textContent = s.name;
+  switchSubTab("chapters");
+  showView("view-subject");
+}
+function goSubject(){ if(currentSubject) openSubject(currentSubject); else goDashboard(); }
+function goDashboard(){ renderDashboard(); }
+
+function switchSubTab(tab){
+  ["chapters","vocab","progress"].forEach(t=>{
+    document.getElementById("tab-"+t).classList.toggle("active", t===tab);
+    document.getElementById("subtab-"+t).classList.toggle("hidden", t!==tab);
+  });
+  if(tab==="chapters") renderChapterList();
+  if(tab==="vocab") renderVocabTab();
+  if(tab==="progress") renderProgressTab();
+}
+
+function renderChapterList(){
+  const el = document.getElementById("chapterList"); el.innerHTML="";
+  currentSubject.chapters.forEach(ch=>{
+    const prog = userDoc.progress.chapters[ch.id] || {};
+    const pct = prog.quizBest || 0;
+    const card = document.createElement("div");
+    card.className = "chapter-card";
+    card.innerHTML = `
+      <div class="chapter-head">
+        <div class="chapter-num">${ch.num}</div>
+        <div class="chapter-title">${ch.title}</div>
+        <div class="chapter-progress">
+          <svg width="34" height="34" viewBox="0 0 34 34">
+            <circle cx="17" cy="17" r="14" stroke="#E4DFD3"></circle>
+            <circle cx="17" cy="17" r="14" stroke="#1D6E73" stroke-dasharray="${2*Math.PI*14}" stroke-dashoffset="${2*Math.PI*14*(1-pct/100)}"></circle>
+          </svg>
+        </div>
+      </div>
+      <div class="chapter-actions">
+        <button class="btn-sm" onclick="openStudy('${ch.id}')">ذاكر الفصل</button>
+        <button class="btn-sm primary" onclick="startQuiz('${ch.id}')">اختبار (${pct}%)</button>
+      </div>
+    `;
+    el.appendChild(card);
+  });
+}
+
+/* ---------- Study view ---------- */
+function openStudy(chapterId){
+  currentChapterId = chapterId;
+  const ch = currentSubject.chapters.find(c=>c.id===chapterId);
+  const el = document.getElementById("studyContent");
+  el.innerHTML = `<p class="hello" style="margin-bottom:14px">${ch.num}. ${ch.title}</p>` +
+    ch.sections.map(sec=>`
+      <div class="study-block">
+        <h3>${sec.h}</h3>
+        <p>${sec.body.replace(/\n/g,"<br>")}</p>
+        ${sec.formula ? `<div class="formula-box">${sec.formula}</div>` : ""}
+        ${sec.note ? `<div class="note-box"><b>ملحوظة</b>${sec.note}</div>` : ""}
+      </div>
+    `).join("");
+  if(!userDoc.progress.chapters[chapterId]) userDoc.progress.chapters[chapterId] = {};
+  userDoc.progress.chapters[chapterId].studied = true;
+  saveProgress();
+  showView("view-study");
+}
+
+/* ---------- Quiz ---------- */
+function startQuiz(chapterId){
+  currentChapterId = chapterId;
+  const list = currentSubject.quizzes[chapterId];
+  quizState = { list, idx:0, correct:0, answered:false };
+  renderQuiz();
+  showView("view-quiz");
+}
+function renderQuiz(){
+  const {list, idx} = quizState;
+  document.getElementById("quizProgressFill").style.width = Math.round((idx/list.length)*100)+"%";
+  const body = document.getElementById("quizBody");
+  if(idx >= list.length){ renderQuizResult(); return; }
+  const q = list[idx];
+  body.innerHTML = `
+    <div class="q-card">
+      <div class="q-num">سؤال ${idx+1} من ${list.length}</div>
+      <div class="q-text">${q.q}</div>
+      <div id="optsHolder"></div>
+      <div id="explainHolder"></div>
+      <div class="quiz-nav"><button class="btn-primary hidden" id="nextBtn" onclick="nextQuestion()">${idx===list.length-1?'عرض النتيجة':'السؤال اللي بعده'}</button></div>
+    </div>
+  `;
+  const optsHolder = document.getElementById("optsHolder");
+  q.opts.forEach((opt,i)=>{
+    const b = document.createElement("button");
+    b.className = "opt"; b.textContent = opt;
+    b.onclick = ()=> answerQuestion(i);
+    optsHolder.appendChild(b);
+  });
+  quizState.answered = false;
+}
+function answerQuestion(i){
+  if(quizState.answered) return;
+  quizState.answered = true;
+  const q = quizState.list[quizState.idx];
+  const opts = document.querySelectorAll("#optsHolder .opt");
+  opts.forEach((b,idx)=>{
+    b.classList.add("disabled");
+    if(idx===q.a) b.classList.add("correct");
+    else if(idx===i) b.classList.add("wrong");
+  });
+  if(i===q.a) quizState.correct++;
+  document.getElementById("explainHolder").innerHTML = `<div class="explain">💡 ${q.ex}</div>`;
+  document.getElementById("nextBtn").classList.remove("hidden");
+}
+function nextQuestion(){ quizState.idx++; renderQuiz(); }
+function renderQuizResult(){
+  const {list, correct} = quizState;
+  const pct = Math.round((correct/list.length)*100);
+  document.getElementById("quizProgressFill").style.width = "100%";
+  document.getElementById("quizBody").innerHTML = `
+    <div class="result-card">
+      <div class="result-score">${pct}%</div>
+      <p>إجابتك صح في ${correct} من ${list.length} سؤال</p>
+      <button class="btn-primary" onclick="startQuiz('${currentChapterId}')">إعادة الاختبار</button>
+      <button class="btn-ghost" onclick="goSubject()">رجوع للفصول</button>
+    </div>
+  `;
+  const prog = userDoc.progress.chapters[currentChapterId] || {};
+  prog.quizBest = Math.max(prog.quizBest||0, pct);
+  prog.attempts = (prog.attempts||0)+1;
+  userDoc.progress.chapters[currentChapterId] = prog;
+  saveProgress();
+}
+
+/* ---------- Vocab / Flashcards ---------- */
+function renderVocabTab(){
+  const el = document.getElementById("subtab-vocab");
+  const total = currentSubject.vocab.length;
+  const known = currentSubject.vocab.filter(v=> userDoc.progress.vocab[v.id] && userDoc.progress.vocab[v.id].box>=2).length;
+  el.innerHTML = `
+    <div class="study-block">
+      <h3>بطاقات حفظ المصطلحات</h3>
+      <p>عندك ${total} مصطلح، حفظت منهم ${known}. البطاقات اللي محتاجة مراجعة بتتكرر أكتر.</p>
+      <button class="btn-primary" onclick="startFlashcards()">ابدأ المراجعة</button>
+    </div>
+  `;
+}
+function startFlashcards(){
+  const prog = userDoc.progress.vocab;
+  vocabQueue = currentSubject.vocab.map(v=>({...v, box: prog[v.id]?prog[v.id].box:0}))
+    .sort((a,b)=> a.box - b.box);
+  vocabIdx = 0;
+  showFlashcard();
+  showView("view-flash");
+}
+function showFlashcard(){
+  if(vocabIdx >= vocabQueue.length){ goSubject(); switchSubTab("vocab"); return; }
+  const v = vocabQueue[vocabIdx];
+  document.getElementById("flashCount").textContent = (vocabIdx+1)+" / "+vocabQueue.length;
+  document.getElementById("flashTermEN").textContent = v.en;
+  document.getElementById("flashTermAR").textContent = v.ar;
+  document.getElementById("flashcardEl").classList.remove("flipped");
+}
+function flipCard(){ document.getElementById("flashcardEl").classList.toggle("flipped"); }
+function rateCard(good){
+  const v = vocabQueue[vocabIdx];
+  const prog = userDoc.progress.vocab[v.id] || {box:0};
+  prog.box = good ? Math.min((prog.box||0)+1, 3) : 0;
+  userDoc.progress.vocab[v.id] = prog;
+  saveProgress();
+  vocabIdx++;
+  showFlashcard();
+}
+
+/* ---------- Progress tab ---------- */
+function renderProgressTab(){
+  const el = document.getElementById("progressBreakdown"); el.innerHTML="";
+  currentSubject.chapters.forEach(ch=>{
+    const pct = (userDoc.progress.chapters[ch.id] && userDoc.progress.chapters[ch.id].quizBest) || 0;
+    const row = document.createElement("div");
+    row.className = "progress-chapter-row";
+    row.innerHTML = `
+      <div class="progress-label">${ch.title}</div>
+      <div class="progress-bar-track"><div class="progress-bar-fill" style="width:${pct}%"></div></div>
+      <div class="progress-pct">${pct}%</div>
+    `;
+    el.appendChild(row);
+  });
+}
+</script>
+</body>
+</html>
