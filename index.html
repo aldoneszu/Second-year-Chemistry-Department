@@ -111,9 +111,35 @@ a{color:inherit}
 .footer-credit .mono{direction:ltr;display:inline-block}
 
 /* ---------- subject page ---------- */
-.tabbar{display:flex;gap:8px;margin-bottom:18px;background:var(--surface);border:1px solid var(--line);border-radius:var(--radius-m);padding:4px}
-.tabbar button{flex:1;padding:9px 4px;border:none;background:none;border-radius:var(--radius-s);font-weight:700;font-size:13.5px;color:var(--ink-soft)}
+.tabbar{display:flex;gap:6px;margin-bottom:18px;background:var(--surface);border:1px solid var(--line);border-radius:var(--radius-m);padding:4px;overflow-x:auto;-webkit-overflow-scrolling:touch}
+.tabbar::-webkit-scrollbar{display:none}
+.tabbar button{flex:none;padding:9px 12px;border:none;background:none;border-radius:var(--radius-s);font-weight:700;font-size:13px;color:var(--ink-soft);white-space:nowrap}
 .tabbar button.active{background:var(--copper);color:#1A1300}
+
+/* ---------- symbols & formulas ---------- */
+.symbol-row{display:flex;align-items:center;gap:14px;padding:12px 0;border-bottom:1px solid var(--line)}
+.symbol-row:last-child{border-bottom:none}
+.symbol-mark{width:46px;height:46px;border-radius:10px;background:var(--surface-2);border:1px solid var(--copper);color:var(--copper);display:flex;align-items:center;justify-content:center;font-family:'JetBrains Mono',monospace;font-size:17px;font-weight:700;flex:none;direction:ltr}
+.symbol-info{flex:1}
+.symbol-info b{display:block;font-size:14px;margin-bottom:2px}
+.symbol-info span{font-size:12.5px;color:var(--ink-soft)}
+.formula-group{margin-bottom:18px}
+.formula-group h4{font-size:13.5px;color:var(--teal);margin:0 0 8px;display:flex;align-items:center;gap:6px}
+.formula-row{background:var(--surface-2);border:1px solid var(--line);border-radius:var(--radius-s);padding:11px 13px;margin-bottom:8px}
+.formula-row .fname{font-size:12.5px;color:var(--ink-soft);margin-bottom:4px}
+.formula-row .fexpr{font-family:'JetBrains Mono',monospace;color:var(--copper);font-size:14.5px;direction:ltr;text-align:right}
+
+/* ---------- reviews ---------- */
+.review-form{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius-m);padding:16px;margin-bottom:16px}
+.review-form textarea{width:100%;min-height:80px;padding:12px;border:1.5px solid var(--line);border-radius:var(--radius-s);background:var(--surface-2);color:var(--ink);font-family:inherit;font-size:14px;resize:vertical;margin-bottom:10px}
+.review-form textarea:focus{outline:none;border-color:var(--copper)}
+.review-card{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius-m);padding:14px 16px;margin-bottom:10px}
+.review-head{display:flex;align-items:center;gap:10px;margin-bottom:8px}
+.review-avatar{width:34px;height:34px;border-radius:50%;background:var(--copper-light);color:var(--copper);display:flex;align-items:center;justify-content:center;font-weight:800;font-size:14px;flex:none}
+.review-name{font-weight:700;font-size:13.5px}
+.review-date{font-size:11px;color:var(--ink-soft)}
+.review-text{font-size:14px;color:var(--ink);line-height:1.7}
+.empty-hint{text-align:center;color:var(--ink-soft);font-size:13.5px;padding:30px 10px}
 
 .chapter-card{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius-m);margin-bottom:12px;overflow:hidden}
 .chapter-head{padding:14px 16px;display:flex;align-items:center;gap:12px}
@@ -265,11 +291,15 @@ a{color:inherit}
       <p class="hello" id="subjectTitle">الفيزياء الكهربية</p>
       <div class="tabbar">
         <button id="tab-chapters" class="active" onclick="switchSubTab('chapters')">الفصول</button>
+        <button id="tab-formulas" onclick="switchSubTab('formulas')">القوانين</button>
+        <button id="tab-symbols" onclick="switchSubTab('symbols')">الرموز</button>
         <button id="tab-vocab" onclick="switchSubTab('vocab')">مصطلحات</button>
         <button id="tab-progress" onclick="switchSubTab('progress')">تقدمي</button>
       </div>
 
       <div id="subtab-chapters"><div id="chapterList"></div></div>
+      <div id="subtab-formulas" class="hidden"></div>
+      <div id="subtab-symbols" class="hidden"></div>
       <div id="subtab-vocab" class="hidden"></div>
       <div id="subtab-progress" class="hidden">
         <div class="study-block">
@@ -324,6 +354,16 @@ a{color:inherit}
         </div>
       </div>
     </div>
+    <!-- ---------- VIEW: reviews ---------- -->
+    <div id="view-reviews" class="hidden">
+      <p class="hello">آراء وملاحظات الطلاب</p>
+      <p class="hello-sub">أي حد عنده ملاحظة أو رأي في المنهج أو الموقع يكتبه هنا، وهيبان لكل الطلاب باسمه.</p>
+      <div class="review-form">
+        <textarea id="reviewText" placeholder="اكتب رأيك أو ملاحظتك هنا..."></textarea>
+        <button class="btn-primary" id="submitReviewBtn" onclick="submitReview()">نشر الملاحظة</button>
+      </div>
+      <div id="reviewsList"><div class="empty-hint">بيتم تحميل الآراء...</div></div>
+    </div>
   </div>
 
   <div class="bottomnav">
@@ -334,6 +374,10 @@ a{color:inherit}
     <button id="nav-subject" onclick="goSubject()">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="4" width="16" height="16" rx="2"/><path d="M8 9h8M8 13h8M8 17h5"/></svg>
       المادة
+    </button>
+    <button id="nav-reviews" onclick="openReviews()">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>
+      الآراء
     </button>
   </div>
 </div>
@@ -700,10 +744,61 @@ const ELECTRICAL_VOCAB = [
 ].map((v,i)=>({id:"v"+i, en:v[0], tr:v[1], ar:v[2]}));
 
 /* =========================================================
+   مرجع الرموز - كل رمز جديد على الطالب مع اسمه ومعناه
+   ========================================================= */
+const ELECTRICAL_SYMBOLS = [
+  { sym:"E", en:"EMF / Voltage Source", ar:"القوة الدافعة الكهربية (جهد المصدر)" },
+  { sym:"V", en:"Voltage", ar:"فرق الجهد (الجهد الطرفي)" },
+  { sym:"I", en:"Current", ar:"شدة التيار الكهربي" },
+  { sym:"R", en:"Resistance", ar:"المقاومة الكهربية" },
+  { sym:"rᵢ", en:"Internal Resistance", ar:"المقاومة الداخلية للمصدر" },
+  { sym:"R_L", en:"Load Resistance", ar:"مقاومة الحمل الخارجي" },
+  { sym:"R_T", en:"Total Resistance", ar:"المقاومة الكلية للدائرة" },
+  { sym:"Σ", en:"Summation (Sigma)", ar:"رمز المجموع الجبري (يُقرأ سيجما)" },
+  { sym:"R_Th", en:"Thevenin Resistance", ar:"المقاومة المكافئة في نظرية ثيفينين" },
+  { sym:"E_Th", en:"Thevenin Voltage", ar:"الجهد المكافئ في نظرية ثيفينين" },
+  { sym:"I_N", en:"Norton Current", ar:"التيار المكافئ في نظرية نورتن" },
+  { sym:"R_N", en:"Norton Resistance", ar:"المقاومة المكافئة في نظرية نورتن (تساوي R_Th)" },
+  { sym:"f", en:"Frequency", ar:"التردد - عدد الدورات في الثانية، وحدته هرتز (Hz)" },
+  { sym:"T", en:"Period", ar:"الزمن الدوري - زمن الدورة الواحدة الكاملة" },
+  { sym:"V_max", en:"Peak / Maximum Voltage", ar:"القيمة العظمى (القمة) للجهد المتردد" },
+  { sym:"I_max", en:"Peak / Maximum Current", ar:"القيمة العظمى (القمة) للتيار المتردد" },
+  { sym:"V_rms / I_rms", en:"RMS Value", ar:"القيمة الفعالة للجهد أو التيار (اللي بتقيسها الأجهزة)" },
+  { sym:"X_C", en:"Capacitive Reactance", ar:"المفاعلة السعوية (مقاومة المكثف للتيار المتردد)" },
+  { sym:"X_L", en:"Inductive Reactance", ar:"المفاعلة الحثية (مقاومة الملف للتيار المتردد)" },
+  { sym:"C", en:"Capacitance", ar:"السعة الكهربية للمكثف، وحدتها فاراد (F)" },
+  { sym:"L", en:"Inductance", ar:"المحاثة الذاتية للملف، وحدتها هنري (H)" },
+  { sym:"Z", en:"Impedance", ar:"المعاوقة الكلية لدائرة التيار المتردد" },
+  { sym:"φ", en:"Phase Angle (Phi)", ar:"زاوية الطور بين الجهد والتيار (تُقرأ فاي)" },
+  { sym:"f_r", en:"Resonant Frequency", ar:"تردد الرنين - التردد اللي عنده X_L=X_C" },
+  { sym:"N_p / N_s", en:"Primary/Secondary Turns", ar:"عدد لفات الملف الابتدائي / الثانوي في المحول" },
+  { sym:"P", en:"Power", ar:"القدرة الكهربية، وحدتها واط (W)" },
+  { sym:"cos(φ)", en:"Power Factor", ar:"معامل القدرة - نسبة القدرة الحقيقية المستفادة" },
+  { sym:"Si", en:"Silicon", ar:"عنصر السيليكون - أساس أشباه الموصلات" },
+  { sym:"Is", en:"Saturation Current", ar:"تيار التشبع العكسي (يعتمد على الحرارة فقط)" },
+  { sym:"V_Z", en:"Zener Voltage", ar:"جهد انهيار دايود الزينر" },
+  { sym:"PIV", en:"Peak Inverse Voltage", ar:"أقصى جهد عكسي يتحمله الدايود بدون انهيار" },
+  { sym:"V_dc", en:"DC Average Voltage", ar:"متوسط الجهد المستمر الناتج بعد التقويم" },
+  { sym:"V_r", en:"Ripple Voltage", ar:"جهد التموج المتبقي بعد الترشيح" },
+  { sym:"π", en:"Pi", ar:"الثابت الرياضي باي ≈ 3.14" },
+  { sym:"Ω", en:"Ohm", ar:"وحدة قياس المقاومة الكهربية (أوم)" },
+  { sym:"A", en:"Ampere", ar:"وحدة قياس شدة التيار (أمبير)" },
+  { sym:"Hz", en:"Hertz", ar:"وحدة قياس التردد (هرتز)" }
+];
+
+/* توليد قائمة القوانين تلقائيًا من محتوى الفصول */
+function buildFormulasFromChapters(chapters){
+  return chapters.map(ch=>({
+    title: ch.num+". "+ch.title,
+    items: ch.sections.filter(s=>s.formula).map(s=>({name:s.h, expr:s.formula}))
+  })).filter(g=>g.items.length>0);
+}
+
+/* =========================================================
    خريطة المواد (نظري / عملي)
    ========================================================= */
 const SUBJECTS_THEORY = [
-  { id:"electrical-physics", name:"الفيزياء الكهربية", icon:"⚡", active:true, chapters:ELECTRICAL_CHAPTERS, quizzes:ELECTRICAL_QUIZZES, vocab:ELECTRICAL_VOCAB },
+  { id:"electrical-physics", name:"الفيزياء الكهربية", icon:"⚡", active:true, chapters:ELECTRICAL_CHAPTERS, quizzes:ELECTRICAL_QUIZZES, vocab:ELECTRICAL_VOCAB, symbols:ELECTRICAL_SYMBOLS },
   { id:"organic-chemistry", name:"الكيمياء العضوية", icon:"🧪", active:false },
   { id:"thermodynamics", name:"الديناميكا الحرارية", icon:"🔥", active:false },
   { id:"calculus", name:"تفاضل وتكامل", icon:"∫", active:false },
@@ -725,11 +820,12 @@ let vocabQueue = [];
 let vocabIdx = 0;
 
 function showView(id){
-  ["view-dashboard","view-subject","view-study","view-quiz","view-flash"].forEach(v=>{
+  ["view-dashboard","view-subject","view-study","view-quiz","view-flash","view-reviews"].forEach(v=>{
     document.getElementById(v).classList.toggle("hidden", v!==id);
   });
   document.getElementById("nav-home").classList.toggle("active", id==="view-dashboard");
-  document.getElementById("nav-subject").classList.toggle("active", id!=="view-dashboard");
+  document.getElementById("nav-subject").classList.toggle("active", ["view-subject","view-study","view-quiz","view-flash"].includes(id));
+  document.getElementById("nav-reviews").classList.toggle("active", id==="view-reviews");
 }
 
 /* ---------- Auth ---------- */
@@ -844,13 +940,95 @@ function goSubject(){ if(currentSubject) openSubject(currentSubject); else goDas
 function goDashboard(){ renderDashboard(); }
 
 function switchSubTab(tab){
-  ["chapters","vocab","progress"].forEach(t=>{
+  ["chapters","formulas","symbols","vocab","progress"].forEach(t=>{
     document.getElementById("tab-"+t).classList.toggle("active", t===tab);
     document.getElementById("subtab-"+t).classList.toggle("hidden", t!==tab);
   });
   if(tab==="chapters") renderChapterList();
+  if(tab==="formulas") renderFormulasTab();
+  if(tab==="symbols") renderSymbolsTab();
   if(tab==="vocab") renderVocabTab();
   if(tab==="progress") renderProgressTab();
+}
+
+function renderFormulasTab(){
+  const el = document.getElementById("subtab-formulas");
+  const groups = buildFormulasFromChapters(currentSubject.chapters);
+  el.innerHTML = `<div class="study-block"><h3>كل قوانين المادة في مكان واحد</h3><p>مجمّعة حسب الفصل عشان تقدر تراجعها بسرعة قبل الامتحان.</p></div>` +
+    groups.map(g=>`
+      <div class="formula-group">
+        <h4><span class="trace-dot" style="width:6px;height:6px"></span>${g.title}</h4>
+        ${g.items.map(it=>`
+          <div class="formula-row">
+            <div class="fname">${it.name}</div>
+            <div class="fexpr">${it.expr.replace(/\n/g,"<br>")}</div>
+          </div>
+        `).join("")}
+      </div>
+    `).join("");
+}
+
+function renderSymbolsTab(){
+  const el = document.getElementById("subtab-symbols");
+  const list = currentSubject.symbols || [];
+  el.innerHTML = `<div class="study-block"><h3>دليل الرموز</h3><p>كل رمز غريب أو جديد شفته في المنهج، معناه واسمه هنا عشان ميبقاش عندك أي علامة استفهام.</p>
+    ${list.map(s=>`
+      <div class="symbol-row">
+        <div class="symbol-mark">${s.sym}</div>
+        <div class="symbol-info"><b>${s.en}</b><span>${s.ar}</span></div>
+      </div>
+    `).join("")}
+  </div>`;
+}
+
+/* ---------- Reviews (public) ---------- */
+function openReviews(){
+  showView("view-reviews");
+  loadReviews();
+}
+async function loadReviews(){
+  const el = document.getElementById("reviewsList");
+  try{
+    const snap = await db.collection("reviews").orderBy("createdAt","desc").limit(100).get();
+    if(snap.empty){ el.innerHTML = `<div class="empty-hint">لسه مفيش آراء، اكتب أول رأي 👆</div>`; return; }
+    el.innerHTML = snap.docs.map(doc=>{
+      const r = doc.data();
+      const initial = (r.name||"?").trim().charAt(0);
+      const date = r.createdAt && r.createdAt.toDate ? r.createdAt.toDate().toLocaleDateString("ar-EG",{day:"numeric",month:"short"}) : "";
+      return `
+        <div class="review-card">
+          <div class="review-head">
+            <div class="review-avatar">${initial}</div>
+            <div><div class="review-name">${escapeHtml(r.name||"طالب")}</div><div class="review-date">${date}</div></div>
+          </div>
+          <div class="review-text">${escapeHtml(r.text||"")}</div>
+        </div>`;
+    }).join("");
+  }catch(err){
+    el.innerHTML = `<div class="empty-hint">حصل خطأ في تحميل الآراء، حاول تاني</div>`;
+  }
+}
+function escapeHtml(str){
+  const d = document.createElement("div"); d.textContent = str; return d.innerHTML;
+}
+async function submitReview(){
+  const txt = document.getElementById("reviewText").value.trim();
+  if(!txt){ return; }
+  const btn = document.getElementById("submitReviewBtn");
+  btn.disabled = true; btn.textContent = "جاري النشر...";
+  try{
+    await db.collection("reviews").add({
+      name: (userDoc && userDoc.name) || "طالب",
+      uid: currentUser.uid,
+      text: txt,
+      createdAt: firebase.firestore.FieldValue.serverTimestamp()
+    });
+    document.getElementById("reviewText").value = "";
+    loadReviews();
+  }catch(err){
+    alert("حصل خطأ، حاول تاني");
+  }
+  btn.disabled = false; btn.textContent = "نشر الملاحظة";
 }
 
 function renderChapterList(){
