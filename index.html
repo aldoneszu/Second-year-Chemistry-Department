@@ -109,6 +109,26 @@ a{color:inherit}
 .footer-credit{text-align:center;color:var(--ink-soft);font-size:11.5px;margin-top:30px;padding-top:16px;border-top:1px solid var(--line);line-height:2}
 .footer-credit b{color:var(--copper);font-weight:700}
 .footer-credit .mono{direction:ltr;display:inline-block}
+.admin-link{background:none;border:none;color:var(--ink-soft);font-size:11px;text-decoration:underline;margin-top:10px;opacity:.6}
+
+/* ---------- admin ---------- */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:80;display:flex;align-items:center;justify-content:center;padding:20px}
+.modal-box{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius-m);padding:20px;max-width:340px;width:100%}
+.modal-box h3{margin:0 0 12px;font-size:16px}
+.admin-bar{position:sticky;top:0;z-index:45;background:var(--bg);padding-bottom:6px}
+.admin-stats{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px}
+.admin-search{width:100%;padding:11px 14px;border:1.5px solid var(--line);border-radius:var(--radius-s);background:var(--surface-2);color:var(--ink);font-size:14px;margin-bottom:14px}
+.user-row{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius-m);padding:14px;margin-bottom:10px}
+.user-row.banned{border-color:var(--danger);opacity:.75}
+.user-top{display:flex;align-items:center;gap:10px;margin-bottom:8px}
+.user-avatar{width:38px;height:38px;border-radius:50%;background:var(--copper-light);color:var(--copper);display:flex;align-items:center;justify-content:center;font-weight:800;flex:none}
+.user-meta{flex:1;min-width:0}
+.user-meta b{display:block;font-size:14px}
+.user-meta span{font-size:12px;color:var(--ink-soft);word-break:break-all}
+.ban-tag{background:var(--danger-light);color:var(--danger);font-size:10.5px;padding:2px 7px;border-radius:20px;font-weight:700;flex:none}
+.user-stats-row{display:flex;gap:14px;margin-bottom:10px;font-size:12px;color:var(--ink-soft)}
+.user-stats-row b{color:var(--ink);font-family:'JetBrains Mono',monospace}
+.user-actions{display:flex;gap:8px}
 
 /* ---------- subject page ---------- */
 .tabbar{display:flex;gap:6px;margin-bottom:18px;background:var(--surface);border:1px solid var(--line);border-radius:var(--radius-m);padding:4px;overflow-x:auto;-webkit-overflow-scrolling:touch}
@@ -278,7 +298,8 @@ a{color:inherit}
 
       <div class="footer-credit">
         برمجة وتطوير: <b>Mahmoud Gamal</b><br>
-        للتواصل والدعم الفني: <span class="mono">01013091169</span>
+        للتواصل والدعم الفني: <span class="mono">01013091169</span><br>
+        <button class="admin-link" onclick="openAdminGate()">لوحة الإدارة</button>
       </div>
     </div>
 
@@ -363,6 +384,34 @@ a{color:inherit}
         <button class="btn-primary" id="submitReviewBtn" onclick="submitReview()">نشر الملاحظة</button>
       </div>
       <div id="reviewsList"><div class="empty-hint">بيتم تحميل الآراء...</div></div>
+    </div>
+
+    <!-- ---------- VIEW: admin ---------- -->
+    <div id="view-admin" class="hidden">
+      <div class="admin-bar">
+        <button class="back-link" onclick="goDashboard()">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 6l6 6-6 6"/></svg>
+          خروج من لوحة الإدارة
+        </button>
+      </div>
+      <p class="hello">لوحة الإدارة</p>
+      <p class="hello-sub">كل الطلاب المسجلين على الموقع وتحكم كامل فيهم</p>
+      <div class="admin-stats">
+        <div class="stat"><b id="adminTotalUsers">0</b><span>إجمالي المسجلين</span></div>
+        <div class="stat"><b id="adminBannedUsers">0</b><span>محظورين</span></div>
+      </div>
+      <input type="text" class="admin-search" id="adminSearch" placeholder="ابحث بالاسم أو البريد..." oninput="renderAdminUsers()">
+      <div id="adminUsersList"><div class="empty-hint">بيتم التحميل...</div></div>
+    </div>
+  </div>
+
+  <!-- ---------- modal: admin password gate ---------- -->
+  <div id="adminGateModal" class="modal-overlay hidden">
+    <div class="modal-box">
+      <h3>لوحة الإدارة</h3>
+      <div class="field"><label>كلمة السر</label><input type="password" id="adminPassInput" placeholder="••••••••"></div>
+      <button class="btn-primary" onclick="checkAdminPass()">دخول</button>
+      <button class="btn-ghost" onclick="closeAdminGate()">إلغاء</button>
     </div>
   </div>
 
@@ -820,7 +869,7 @@ let vocabQueue = [];
 let vocabIdx = 0;
 
 function showView(id){
-  ["view-dashboard","view-subject","view-study","view-quiz","view-flash","view-reviews"].forEach(v=>{
+  ["view-dashboard","view-subject","view-study","view-quiz","view-flash","view-reviews","view-admin"].forEach(v=>{
     document.getElementById(v).classList.toggle("hidden", v!==id);
   });
   document.getElementById("nav-home").classList.toggle("active", id==="view-dashboard");
@@ -877,6 +926,11 @@ auth.onAuthStateChanged(async (user)=>{
     const snap = await db.collection("users").doc(user.uid).get();
     userDoc = snap.exists ? snap.data() : { name:user.displayName||"", progress:{chapters:{},vocab:{}} };
     if(!userDoc.progress) userDoc.progress = {chapters:{}, vocab:{}};
+    if(userDoc.isBanned){
+      alert("تم إيقاف حسابك من الإدارة. لو ده غلط تواصل مع الدعم الفني.");
+      auth.signOut();
+      return;
+    }
     document.getElementById("authScreen").classList.add("hidden");
     document.getElementById("appShell").classList.remove("hidden");
     document.getElementById("helloName").textContent = "أهلاً " + (userDoc.name||"") + " 👋";
@@ -1207,6 +1261,96 @@ function renderProgressTab(){
     `;
     el.appendChild(row);
   });
+}
+
+/* =========================================================
+   لوحة الإدارة
+   ========================================================= */
+const ADMIN_PASSWORD = "28112006";
+let adminUnlocked = false;
+let allUsersCache = [];
+
+function openAdminGate(){
+  document.getElementById("adminPassInput").value = "";
+  document.getElementById("adminGateModal").classList.remove("hidden");
+  setTimeout(()=>document.getElementById("adminPassInput").focus(), 50);
+}
+function closeAdminGate(){
+  document.getElementById("adminGateModal").classList.add("hidden");
+}
+function checkAdminPass(){
+  const val = document.getElementById("adminPassInput").value;
+  if(val === ADMIN_PASSWORD){
+    adminUnlocked = true;
+    closeAdminGate();
+    openAdminPanel();
+  } else {
+    alert("كلمة السر غلط");
+  }
+}
+async function openAdminPanel(){
+  if(!adminUnlocked){ openAdminGate(); return; }
+  showView("view-admin");
+  document.getElementById("adminUsersList").innerHTML = `<div class="empty-hint">بيتم التحميل...</div>`;
+  try{
+    const snap = await db.collection("users").get();
+    allUsersCache = snap.docs.map(d=>({uid:d.id, ...d.data()}));
+    document.getElementById("adminTotalUsers").textContent = allUsersCache.length;
+    document.getElementById("adminBannedUsers").textContent = allUsersCache.filter(u=>u.isBanned).length;
+    renderAdminUsers();
+  }catch(err){
+    document.getElementById("adminUsersList").innerHTML = `<div class="empty-hint">مش قادر أجيب بيانات المستخدمين. تأكد إن Firestore Rules فيها صلاحية الأدمن (UID بتاعك) على مجموعة users.</div>`;
+  }
+}
+function renderAdminUsers(){
+  const q = (document.getElementById("adminSearch").value||"").trim().toLowerCase();
+  const el = document.getElementById("adminUsersList");
+  let list = allUsersCache;
+  if(q) list = list.filter(u=> (u.name||"").toLowerCase().includes(q) || (u.email||"").toLowerCase().includes(q));
+  if(list.length===0){ el.innerHTML = `<div class="empty-hint">مفيش نتائج</div>`; return; }
+  el.innerHTML = list.map(u=>{
+    const chStudied = Object.values((u.progress&&u.progress.chapters)||{}).filter(c=>c.studied).length;
+    let attempts=0; Object.values((u.progress&&u.progress.chapters)||{}).forEach(c=>attempts+=(c.attempts||0));
+    const vocabKnown = Object.values((u.progress&&u.progress.vocab)||{}).filter(v=>v.box>=2).length;
+    const initial = (u.name||"?").trim().charAt(0);
+    return `
+      <div class="user-row ${u.isBanned?'banned':''}">
+        <div class="user-top">
+          <div class="user-avatar">${initial}</div>
+          <div class="user-meta"><b>${escapeHtml(u.name||"بدون اسم")}</b><span>${escapeHtml(u.email||"")}</span></div>
+          ${u.isBanned ? `<span class="ban-tag">محظور</span>` : ""}
+        </div>
+        <div class="user-stats-row">
+          <span>فصول: <b>${chStudied}</b></span>
+          <span>اختبارات: <b>${attempts}</b></span>
+          <span>مصطلحات: <b>${vocabKnown}</b></span>
+        </div>
+        <div class="user-actions">
+          <button class="btn-sm" onclick="toggleBanUser('${u.uid}', ${!u.isBanned})">${u.isBanned?'إلغاء الحظر':'حظر'}</button>
+          <button class="btn-sm" onclick="resetUserProgress('${u.uid}')">تصفير التقدم</button>
+          <button class="btn-sm" style="border-color:var(--danger);color:var(--danger)" onclick="deleteUserData('${u.uid}')">حذف البيانات</button>
+        </div>
+      </div>`;
+  }).join("");
+}
+async function toggleBanUser(uid, ban){
+  await db.collection("users").doc(uid).set({isBanned:ban}, {merge:true});
+  const u = allUsersCache.find(x=>x.uid===uid); if(u) u.isBanned = ban;
+  document.getElementById("adminBannedUsers").textContent = allUsersCache.filter(u=>u.isBanned).length;
+  renderAdminUsers();
+}
+async function resetUserProgress(uid){
+  if(!confirm("متأكد إنك عايز تصفّر تقدم الطالب ده بالكامل؟")) return;
+  await db.collection("users").doc(uid).set({progress:{chapters:{},vocab:{}}}, {merge:true});
+  const u = allUsersCache.find(x=>x.uid===uid); if(u) u.progress = {chapters:{},vocab:{}};
+  renderAdminUsers();
+}
+async function deleteUserData(uid){
+  if(!confirm("هيتم حذف بيانات الطالب ده نهائيًا من قاعدة البيانات (البروفايل والتقدم). متأكد؟")) return;
+  await db.collection("users").doc(uid).delete();
+  allUsersCache = allUsersCache.filter(x=>x.uid!==uid);
+  document.getElementById("adminTotalUsers").textContent = allUsersCache.length;
+  renderAdminUsers();
 }
 </script>
 </body>
