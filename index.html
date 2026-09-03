@@ -129,6 +129,33 @@ a{color:inherit}
 .user-stats-row{display:flex;gap:14px;margin-bottom:10px;font-size:12px;color:var(--ink-soft)}
 .user-stats-row b{color:var(--ink);font-family:'JetBrains Mono',monospace}
 .user-actions{display:flex;gap:8px}
+.online-dot{width:9px;height:9px;border-radius:50%;background:#3A4152;flex:none;border:2px solid var(--surface)}
+.online-dot.on{background:var(--good);box-shadow:0 0 6px rgba(87,194,115,.8)}
+.user-avatar-wrap{position:relative}
+.user-avatar-wrap .online-dot{position:absolute;bottom:-1px;left:-1px}
+
+/* ---------- maintenance ---------- */
+.maint-screen{min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:24px;text-align:center}
+.maint-screen svg{width:56px;height:56px;color:var(--copper);margin-bottom:16px}
+.maint-screen h1{font-size:20px;margin:0 0 8px}
+.maint-screen p{color:var(--ink-soft);font-size:14.5px;max-width:320px;margin:0 auto}
+
+/* ---------- notifications ---------- */
+.notif-card{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius-m);padding:14px 16px;margin-bottom:10px}
+.notif-card.unread{border-inline-start:3px solid var(--copper)}
+.notif-title{font-weight:700;font-size:14px;margin-bottom:4px}
+.notif-text{font-size:13.5px;color:var(--ink-soft)}
+.notif-date{font-size:11px;color:var(--ink-soft);margin-top:6px}
+
+.switch-row{display:flex;align-items:center;justify-content:space-between;padding:12px 0}
+.switch{position:relative;width:46px;height:26px;flex:none}
+.switch input{opacity:0;width:0;height:0}
+.switch-track{position:absolute;inset:0;background:var(--line);border-radius:20px;transition:.2s;cursor:pointer}
+.switch-track::before{content:"";position:absolute;width:20px;height:20px;left:3px;top:3px;background:#fff;border-radius:50%;transition:.2s}
+.switch input:checked + .switch-track{background:var(--copper)}
+.switch input:checked + .switch-track::before{transform:translateX(-20px)}
+.admin-section-title{font-size:13px;font-weight:800;color:var(--teal);margin:20px 0 8px;display:flex;align-items:center;gap:6px}
+.notif-target-select{width:100%;padding:11px 14px;border:1.5px solid var(--line);border-radius:var(--radius-s);background:var(--surface-2);color:var(--ink);font-size:14px;margin-bottom:10px}
 
 /* ---------- subject page ---------- */
 .tabbar{display:flex;gap:6px;margin-bottom:18px;background:var(--surface);border:1px solid var(--line);border-radius:var(--radius-m);padding:4px;overflow-x:auto;-webkit-overflow-scrolling:touch}
@@ -238,6 +265,16 @@ a{color:inherit}
 </head>
 <body>
 
+<!-- ============ MAINTENANCE SCREEN ============ -->
+<div id="maintScreen" class="hidden">
+  <div class="maint-screen">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>
+    <h1>الموقع تحت الصيانة حاليًا</h1>
+    <p id="maintMessage">إحنا بنعمل تحديثات على الموقع، ارجع تاني بعد شوية 🛠️</p>
+    <button class="admin-link" onclick="openAdminGate()" style="margin-top:20px">لوحة الإدارة</button>
+  </div>
+</div>
+
 <!-- ============ AUTH SCREEN ============ -->
 <div id="authScreen" class="auth-screen">
   <div class="auth-hero">
@@ -272,6 +309,10 @@ a{color:inherit}
       <svg class="brand-mark" viewBox="0 0 48 48" fill="none"><rect width="48" height="48" rx="12" fill="#E8A33D"/><path d="M24 8 L14 26 H22 L20 40 L34 20 H26 L28 8 Z" fill="#0D0F14"/></svg>
       <div>مذاكرة<small>ثانية علوم - كيمياء</small></div>
     </div>
+    <button class="icon-btn" id="bellBtn" title="الإشعارات" onclick="openNotifs()" style="position:relative">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+      <span id="bellBadge" class="hidden" style="position:absolute;top:-3px;left:-3px;background:var(--danger);color:#fff;font-size:9.5px;font-weight:800;border-radius:10px;min-width:15px;height:15px;display:flex;align-items:center;justify-content:center;padding:0 3px">0</span>
+    </button>
     <button class="icon-btn" id="logoutBtn" title="تسجيل الخروج">
       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="M16 17l5-5-5-5"/><path d="M21 12H9"/></svg>
     </button>
@@ -395,13 +436,44 @@ a{color:inherit}
         </button>
       </div>
       <p class="hello">لوحة الإدارة</p>
-      <p class="hello-sub">كل الطلاب المسجلين على الموقع وتحكم كامل فيهم</p>
+      <p class="hello-sub">تحكم كامل في الموقع والطلاب</p>
+
+      <div class="admin-section-title">🛠️ وضع الصيانة</div>
+      <div class="study-block">
+        <div class="switch-row">
+          <span>إيقاف الموقع مؤقتًا لكل الطلاب</span>
+          <label class="switch"><input type="checkbox" id="maintToggle" onchange="toggleMaintenance()"><span class="switch-track"></span></label>
+        </div>
+        <textarea id="maintMsgInput" class="admin-search" style="min-height:60px;margin-top:8px" placeholder="رسالة الصيانة اللي هتظهر للطلاب"></textarea>
+        <button class="btn-sm primary" style="width:100%;margin-top:8px" onclick="saveMaintMessage()">حفظ الرسالة</button>
+      </div>
+
+      <div class="admin-section-title">🔔 إرسال إشعار</div>
+      <div class="study-block">
+        <select class="notif-target-select" id="notifTarget">
+          <option value="all">للكل</option>
+        </select>
+        <input type="text" class="admin-search" id="notifTitle" placeholder="عنوان الإشعار">
+        <textarea id="notifText" class="admin-search" style="min-height:70px" placeholder="نص الإشعار"></textarea>
+        <button class="btn-primary" onclick="sendNotification()">إرسال</button>
+      </div>
+
+      <div class="admin-section-title">👥 الطلاب</div>
       <div class="admin-stats">
         <div class="stat"><b id="adminTotalUsers">0</b><span>إجمالي المسجلين</span></div>
-        <div class="stat"><b id="adminBannedUsers">0</b><span>محظورين</span></div>
+        <div class="stat"><b id="adminOnlineUsers">0</b><span>أونلاين الآن</span></div>
       </div>
       <input type="text" class="admin-search" id="adminSearch" placeholder="ابحث بالاسم أو البريد..." oninput="renderAdminUsers()">
       <div id="adminUsersList"><div class="empty-hint">بيتم التحميل...</div></div>
+    </div>
+    <!-- ---------- VIEW: notifications ---------- -->
+    <div id="view-notifs" class="hidden">
+      <button class="back-link" onclick="goDashboard()">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 6l6 6-6 6"/></svg>
+        رجوع للرئيسية
+      </button>
+      <p class="hello">الإشعارات</p>
+      <div id="notifsList"><div class="empty-hint">بيتم التحميل...</div></div>
     </div>
   </div>
 
@@ -869,7 +941,7 @@ let vocabQueue = [];
 let vocabIdx = 0;
 
 function showView(id){
-  ["view-dashboard","view-subject","view-study","view-quiz","view-flash","view-reviews","view-admin"].forEach(v=>{
+  ["view-dashboard","view-subject","view-study","view-quiz","view-flash","view-reviews","view-admin","view-notifs"].forEach(v=>{
     document.getElementById(v).classList.toggle("hidden", v!==id);
   });
   document.getElementById("nav-home").classList.toggle("active", id==="view-dashboard");
@@ -931,16 +1003,107 @@ auth.onAuthStateChanged(async (user)=>{
       auth.signOut();
       return;
     }
+    document.getElementById("maintScreen").classList.add("hidden");
     document.getElementById("authScreen").classList.add("hidden");
     document.getElementById("appShell").classList.remove("hidden");
     document.getElementById("helloName").textContent = "أهلاً " + (userDoc.name||"") + " 👋";
     renderDashboard();
+    startPresenceHeartbeat();
+    listenNotifications();
   } else {
     currentUser = null; userDoc = null;
     document.getElementById("appShell").classList.add("hidden");
-    document.getElementById("authScreen").classList.remove("hidden");
+    if(!siteMaintenanceOn) document.getElementById("authScreen").classList.remove("hidden");
   }
 });
+
+/* ---------- Presence (online tracking) ---------- */
+let presenceTimer = null;
+function startPresenceHeartbeat(){
+  updatePresence();
+  if(presenceTimer) clearInterval(presenceTimer);
+  presenceTimer = setInterval(updatePresence, 45000);
+  document.addEventListener("visibilitychange", ()=>{ if(document.visibilityState==="visible") updatePresence(); });
+}
+function updatePresence(){
+  if(!currentUser) return;
+  db.collection("users").doc(currentUser.uid).set({ lastActive: firebase.firestore.FieldValue.serverTimestamp() }, {merge:true}).catch(()=>{});
+}
+function isOnline(u){
+  if(!u.lastActive || !u.lastActive.toDate) return false;
+  return (Date.now() - u.lastActive.toDate().getTime()) < 2*60*1000;
+}
+
+/* ---------- Maintenance mode (live) ---------- */
+let siteMaintenanceOn = false;
+db.collection("site_config").doc("settings").onSnapshot(doc=>{
+  const data = doc.exists ? doc.data() : {};
+  siteMaintenanceOn = !!data.maintenanceMode;
+  document.getElementById("maintMessage").textContent = data.maintenanceMessage || "إحنا بنعمل تحديثات على الموقع، ارجع تاني بعد شوية 🛠️";
+  const maintToggle = document.getElementById("maintToggle");
+  if(maintToggle) maintToggle.checked = siteMaintenanceOn;
+  const maintMsgInput = document.getElementById("maintMsgInput");
+  if(maintMsgInput && document.activeElement!==maintMsgInput) maintMsgInput.value = data.maintenanceMessage || "";
+
+  if(siteMaintenanceOn && !adminUnlocked){
+    document.getElementById("authScreen").classList.add("hidden");
+    document.getElementById("appShell").classList.add("hidden");
+    document.getElementById("maintScreen").classList.remove("hidden");
+  } else {
+    document.getElementById("maintScreen").classList.add("hidden");
+    if(!currentUser) document.getElementById("authScreen").classList.remove("hidden");
+  }
+}, ()=>{ /* rules may block unauthenticated read; ignore */ });
+
+async function toggleMaintenance(){
+  const on = document.getElementById("maintToggle").checked;
+  await db.collection("site_config").doc("settings").set({ maintenanceMode: on }, {merge:true});
+}
+async function saveMaintMessage(){
+  const msg = document.getElementById("maintMsgInput").value.trim();
+  await db.collection("site_config").doc("settings").set({ maintenanceMessage: msg }, {merge:true});
+  alert("تم حفظ رسالة الصيانة");
+}
+
+/* ---------- Notifications ---------- */
+let notifUnsub = null;
+let notifsCache = [];
+function listenNotifications(){
+  if(notifUnsub) notifUnsub();
+  notifUnsub = db.collection("notifications")
+    .where("target","in",["all", currentUser.uid])
+    .orderBy("createdAt","desc")
+    .limit(50)
+    .onSnapshot(snap=>{
+      notifsCache = snap.docs.map(d=>({id:d.id, ...d.data()}));
+      const lastRead = (userDoc.lastReadNotifAt && userDoc.lastReadNotifAt.toDate) ? userDoc.lastReadNotifAt.toDate().getTime() : 0;
+      const unread = notifsCache.filter(n=> n.createdAt && n.createdAt.toDate && n.createdAt.toDate().getTime() > lastRead).length;
+      const badge = document.getElementById("bellBadge");
+      if(unread>0){ badge.textContent = unread>9?"9+":unread; badge.classList.remove("hidden"); }
+      else badge.classList.add("hidden");
+      if(!document.getElementById("view-notifs").classList.contains("hidden")) renderNotifs();
+    }, ()=>{});
+}
+function openNotifs(){
+  showView("view-notifs");
+  renderNotifs();
+  const now = firebase.firestore.FieldValue.serverTimestamp();
+  db.collection("users").doc(currentUser.uid).set({lastReadNotifAt: now}, {merge:true});
+  userDoc.lastReadNotifAt = {toDate:()=>new Date()};
+  document.getElementById("bellBadge").classList.add("hidden");
+}
+function renderNotifs(){
+  const el = document.getElementById("notifsList");
+  if(notifsCache.length===0){ el.innerHTML = `<div class="empty-hint">مفيش إشعارات لسه</div>`; return; }
+  el.innerHTML = notifsCache.map(n=>{
+    const date = n.createdAt && n.createdAt.toDate ? n.createdAt.toDate().toLocaleString("ar-EG",{day:"numeric",month:"short",hour:"2-digit",minute:"2-digit"}) : "";
+    return `<div class="notif-card">
+      <div class="notif-title">${escapeHtml(n.title||"إشعار")}</div>
+      <div class="notif-text">${escapeHtml(n.text||"")}</div>
+      <div class="notif-date">${date}</div>
+    </div>`;
+  }).join("");
+}
 
 async function saveProgress(){
   if(!currentUser) return;
@@ -1290,16 +1453,26 @@ function checkAdminPass(){
 }
 async function openAdminPanel(){
   if(!adminUnlocked){ openAdminGate(); return; }
+  document.getElementById("maintScreen").classList.add("hidden");
   showView("view-admin");
   document.getElementById("adminUsersList").innerHTML = `<div class="empty-hint">بيتم التحميل...</div>`;
   try{
+    const cfgDoc = await db.collection("site_config").doc("settings").get();
+    const cfg = cfgDoc.exists ? cfgDoc.data() : {};
+    document.getElementById("maintToggle").checked = !!cfg.maintenanceMode;
+    document.getElementById("maintMsgInput").value = cfg.maintenanceMessage || "";
+
     const snap = await db.collection("users").get();
     allUsersCache = snap.docs.map(d=>({uid:d.id, ...d.data()}));
     document.getElementById("adminTotalUsers").textContent = allUsersCache.length;
-    document.getElementById("adminBannedUsers").textContent = allUsersCache.filter(u=>u.isBanned).length;
+    document.getElementById("adminOnlineUsers").textContent = allUsersCache.filter(isOnline).length;
+
+    const targetSel = document.getElementById("notifTarget");
+    targetSel.innerHTML = `<option value="all">للكل</option>` + allUsersCache.map(u=>`<option value="${u.uid}">${escapeHtml(u.name||u.email||u.uid)}</option>`).join("");
+
     renderAdminUsers();
   }catch(err){
-    document.getElementById("adminUsersList").innerHTML = `<div class="empty-hint">مش قادر أجيب بيانات المستخدمين. تأكد إن Firestore Rules فيها صلاحية الأدمن (UID بتاعك) على مجموعة users.</div>`;
+    document.getElementById("adminUsersList").innerHTML = `<div class="empty-hint">مش قادر أجيب بيانات المستخدمين. تأكد إن Firestore Rules فيها صلاحية الأدمن (UID بتاعك) على مجموعات users وsite_config وnotifications.</div>`;
   }
 }
 function renderAdminUsers(){
@@ -1313,11 +1486,12 @@ function renderAdminUsers(){
     let attempts=0; Object.values((u.progress&&u.progress.chapters)||{}).forEach(c=>attempts+=(c.attempts||0));
     const vocabKnown = Object.values((u.progress&&u.progress.vocab)||{}).filter(v=>v.box>=2).length;
     const initial = (u.name||"?").trim().charAt(0);
+    const online = isOnline(u);
     return `
       <div class="user-row ${u.isBanned?'banned':''}">
         <div class="user-top">
-          <div class="user-avatar">${initial}</div>
-          <div class="user-meta"><b>${escapeHtml(u.name||"بدون اسم")}</b><span>${escapeHtml(u.email||"")}</span></div>
+          <div class="user-avatar-wrap"><div class="user-avatar">${initial}</div><div class="online-dot ${online?'on':''}"></div></div>
+          <div class="user-meta"><b>${escapeHtml(u.name||"بدون اسم")}</b><span>${escapeHtml(u.email||"")} ${online?'· أونلاين الآن':''}</span></div>
           ${u.isBanned ? `<span class="ban-tag">محظور</span>` : ""}
         </div>
         <div class="user-stats-row">
@@ -1336,7 +1510,6 @@ function renderAdminUsers(){
 async function toggleBanUser(uid, ban){
   await db.collection("users").doc(uid).set({isBanned:ban}, {merge:true});
   const u = allUsersCache.find(x=>x.uid===uid); if(u) u.isBanned = ban;
-  document.getElementById("adminBannedUsers").textContent = allUsersCache.filter(u=>u.isBanned).length;
   renderAdminUsers();
 }
 async function resetUserProgress(uid){
@@ -1351,6 +1524,18 @@ async function deleteUserData(uid){
   allUsersCache = allUsersCache.filter(x=>x.uid!==uid);
   document.getElementById("adminTotalUsers").textContent = allUsersCache.length;
   renderAdminUsers();
+}
+async function sendNotification(){
+  const target = document.getElementById("notifTarget").value;
+  const title = document.getElementById("notifTitle").value.trim();
+  const text = document.getElementById("notifText").value.trim();
+  if(!title || !text){ alert("اكتب العنوان والنص"); return; }
+  await db.collection("notifications").add({
+    target, title, text, createdAt: firebase.firestore.FieldValue.serverTimestamp()
+  });
+  document.getElementById("notifTitle").value = "";
+  document.getElementById("notifText").value = "";
+  alert("تم إرسال الإشعار");
 }
 </script>
 </body>
