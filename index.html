@@ -357,6 +357,7 @@ a{color:inherit}
         <button id="tab-symbols" onclick="switchSubTab('symbols')">الرموز</button>
         <button id="tab-vocab" onclick="switchSubTab('vocab')">مصطلحات</button>
         <button id="tab-progress" onclick="switchSubTab('progress')">تقدمي</button>
+        <button id="tab-references" onclick="switchSubTab('references')">مراجع</button>
       </div>
 
       <div id="subtab-chapters"><div id="chapterList"></div></div>
@@ -369,6 +370,7 @@ a{color:inherit}
           <div id="progressBreakdown"></div>
         </div>
       </div>
+      <div id="subtab-references" class="hidden"></div>
     </div>
 
     <!-- ---------- VIEW: study ---------- -->
@@ -907,6 +909,81 @@ const ELECTRICAL_SYMBOLS = [
   { sym:"Hz", en:"Hertz", ar:"وحدة قياس التردد (هرتز)" }
 ];
 
+const MOHAMED_CHAPTERS=[
+{id:'moh1',num:1,title:'Alicyclic Compounds — التصنيف والتسمية',sections:[
+{h:'Alicyclic compounds',body:'مركبات عضوية تحتوي على حلقة كربونية واحدة على الأقل وليست عطرية. تنقسم في المحاضرة إلى Monocyclic compounds وBicyclic compounds.'},
+{h:'Nomenclature of monocyclic compounds',body:'الهيدروكربونات الأليفاتية الحلقية تُسمى بإضافة cyclo- إلى اسم السلسلة المفتوحة المناظرة التي لها نفس عدد ذرات الكربون في الحلقة.'},
+{h:'Classification of monocyclic systems',body:'Small rings: 3–4 members. Common rings: 5–7 members. Medium rings: 8–11 members. Large rings: 12 members.'},
+{h:'Substitution in monocyclic compounds',body:'Mono-substituted وDi-substituted وTri-substituted، مع مراعاة نظام الأولوية في التسمية كما ورد في المادة.'}]},
+{id:'moh2',num:2,title:'Small Rings — الحلقات الصغيرة',sections:[
+{h:'Saturated three and four-membered rings',body:'تشمل طرق التحضير المذكورة: Wurtz intermolecular reaction، إضافة carbenes إلى مركبات غير مشبعة، Kishner reaction، Dimerization of allenes، وPhotolysis of cyclopentanone.'},
+{h:'Wurtz intermolecular reaction',body:'تُستخدم أملاح الصوديوم مع ثنائيات الهاليد المناسبة لتكوين الحلقة، مع تكوين NaX كناتج جانبي.',formula:'Dihalide + 2 Na → cyclic hydrocarbon + 2 NaX'},
+{h:'Properties of small rings',body:'تتناول المحاضرة Hydrogenation، وتأثير hydrogen halides والhalogens والأحماض المعدنية القوية، وكذلك تفاعل الكلور في ضوء الشمس.'},
+{h:'Unsaturated three and four-membered rings',body:'تشمل Decomposition of cycloalkyltrimethylammonium وAction of lithium amalgam on tetrabromocyclobutane.'}]},
+{id:'moh3',num:3,title:'Five & Six Membered Rings',sections:[
+{h:'Five and six membered rings',body:'جزء مستقل من محاضرة Alicyclic and Unsaturated Compounds مخصص للحلقات ذات الخمس والست ذرات.'},
+{h:'Bicyclic compounds',body:'تنقسم إلى: Bicyclic compounds with isolated rings، Spirans (Spiro compounds)، وFused rings compounds.'}]},
+{id:'moh4',num:4,title:'Bicyclic & Spiro Compounds',sections:[
+{h:'Bicyclic compounds with isolated rings',body:'من طرق التحضير المذكورة: Wurtz reaction، From Grignard reagents، condensation of cyclic aldehydes/ketones، وhydrogenation of corresponding aromatic compounds.'},
+{h:'Spirans (Spiro compounds)',body:'طرق التحضير المذكورة تشمل Cyclization of diester وPinacol–pinacolone rearrangement of dicyclopentyl-1,1′-diol.'},
+{h:'Fused rings',body:'Alicyclic compounds with fused rings: من طرق التحضير catalytic hydrogenation of condensed aromatic compounds، cyclization starting with compounds containing one ring، وإضافة carbenes إلى unsaturated monocyclic compounds.'}]},
+{id:'moh5',num:5,title:'Di-olefins — الهيدروكربونات ذات الرابطتين المزدوجتين',sections:[
+{h:'Classification of di-olefins',body:'حسب موضع الرابطتين المزدوجتين: Isolated double bonds، Cumulated double bonds، Conjugated double bonds.'},
+{h:'Isolated double bonds',body:'الرابطتان المزدوجتان منفصلتان بأكثر من رابطة أحادية، وتتناول المادة طرق التحضير وبعض تفاعلات الإضافة.'},
+{h:'Cumulated double bonds — Allene',body:'Allene من المركبات ذات الرابطتين المتجاورتين. من خواصه المذكورة: مع bromine يعطي tetrabromo derivative، ومع dilute sulphuric acid يعطي acetone، ويمكن أن يحدث isomerization عند التسخين مع sodium metal إلى prop-1-yne.'},
+{h:'Conjugated double bonds',body:'تشمل Buta-1,3-diene وIsoprene (2-methyl-1,3-butadiene)، مع طرق التحضير والخواص والتفاعلات المذكورة في المحاضرة.',formula:'Buta-1,3-diene: CH₂=CH–CH=CH₂\nIsoprene: CH₂=C(CH₃)–CH=CH₂'}]},
+{id:'moh6',num:6,title:'Unsaturated Hydrocarbons — خواص وتفاعلات إضافية',sections:[
+{h:'Chemical properties of conjugated dienes',body:'تتناول المادة Addition reactions وOxidation، مع أمثلة على تفاعلات Buta-1,3-diene وIsoprene، وكذلك التحضير والخواص المرتبطة بالرابطة المزدوجة.'},
+{h:'Oxidation',body:'وردت أمثلة على أكسدة المركبات غير المشبعة، مع إمكانية حماية الرابطة المزدوجة بالبرمنة ثم إجراء الأكسدة ونزع البروم بالزنك في محلول ميثانولي.',formula:'Bromination → Oxidation → Debromination (Zn / methanolic solution)'}]}
+];
+const MOHAMED_VOCAB=[
+{id:'mv1',en:'Alicyclic compounds',tr:'أليسايكلِك كومباوندز',ar:'مركبات أليفاتية حلقية'},
+{id:'mv2',en:'Monocyclic',tr:'مونو سايكلِك',ar:'أحادية الحلقة'},
+{id:'mv3',en:'Bicyclic',tr:'باي سايكلِك',ar:'ثنائية الحلقة'},
+{id:'mv4',en:'Spiro compounds',tr:'سبايرو كومباوندز',ar:'مركبات سبايرو'},
+{id:'mv5',en:'Fused rings',tr:'فيوزد رينجز',ar:'حلقات مندمجة'},
+{id:'mv6',en:'Isolated double bonds',tr:'آيزوليتد دابل بوندز',ar:'روابط مزدوجة معزولة'},
+{id:'mv7',en:'Cumulated double bonds',tr:'كيوميوليتد',ar:'روابط مزدوجة متراكمة'},
+{id:'mv8',en:'Conjugated double bonds',tr:'كونجوجيتد',ar:'روابط مزدوجة مترافقة'},
+{id:'mv9',en:'Allene',tr:'ألين',ar:'الألين'},
+{id:'mv10',en:'Isoprene',tr:'آيزوبرين',ar:'2-methyl-1,3-butadiene'}
+];
+const MOHAMED_SYMBOLS=[
+{sym:'cyclo-',en:'Cyclo prefix',ar:'بادئة تسمية الحلقات'},
+{sym:'Na',en:'Sodium',ar:'الصوديوم'},
+{sym:'KOH / Pt',en:'KOH / Platinum',ar:'هيدروكسيد البوتاسيوم / بلاتين'},
+{sym:'Li-Hg',en:'Lithium amalgam',ar:'ملغم الليثيوم'},
+{sym:'H₂ / Ni',en:'Hydrogen / Nickel',ar:'هيدروجين / نيكل'},
+{sym:'CH₂N₂',en:'Diazomethane',ar:'ديازوميثان'},
+{sym:'Br₂',en:'Bromine',ar:'البروم'},
+{sym:'O₃',en:'Ozone',ar:'الأوزون'}
+];
+const MOHAMED_QUIZZES={
+moh1:[{q:'ما المقصود بـ Alicyclic compounds؟',opts:['مركبات عطرية فقط','مركبات عضوية حلقية غير عطرية','أملاح معدنية','ألكانات مفتوحة'],a:1,ex:'المحاضرة تعرفها كمركبات عضوية تحتوي حلقة كربونية وليست عطرية.'}],
+moh2:[{q:'Small rings عدد ذرات الحلقة فيها؟',opts:['3–4','5–7','8–11','12'],a:0,ex:'Small rings = 3–4.'}],
+moh3:[{q:'أي مما يلي قسم من Bicyclic compounds؟',opts:['Spirans','Alkanes فقط','Amines فقط','Esters فقط'],a:0,ex:'Spirans أحد أقسام المركبات ثنائية الحلقة المذكورة.'}],
+moh4:[{q:'أي طريقة تحضير ذُكرت للـfused rings؟',opts:['Catalytic hydrogenation of condensed aromatic compounds','Iodoform test','Tollen test','Hinsberg test'],a:0,ex:'وردت hydrogenation للمركبات العطرية المندمجة.'}],
+moh5:[{q:'حسب موضع الرابطتين المزدوجتين، إلى كم نوع تقسم di-olefins؟',opts:['نوع واحد','نوعان','3 أنواع','5 أنواع'],a:2,ex:'Isolated, Cumulated, Conjugated.'},{q:'ما الناتج المذكور لتفاعل allene مع dilute sulphuric acid؟',opts:['Acetone','Benzene','Ethanol','Acetic acid'],a:0,ex:'المادة تذكر أنه يعطي acetone.'}],
+moh6:[{q:'ما المادة المستخدمة لنزع البروم بعد حماية الرابطة المزدوجة بالبرمنة؟',opts:['Zn dust','NaCl','AgNO₃','KMnO₄'],a:0,ex:'ورد zinc dust في methanolic solution.'}]
+};
+
+/* محتوى د. عبد الرزاق — مبني على ملفي الميكانيزمات والتحويلات المرسلين له */
+const ABD_CHAPTERS=ORGANIC_CHAPTERS;
+const ABD_VOCAB=ORGANIC_VOCAB;
+const ABD_SYMBOLS=ORGANIC_SYMBOLS;
+const ABD_QUIZZES=ORGANIC_QUIZZES;
+const SUBJECT_REFERENCES={
+  'organic-mohamed':[
+    {label:'Lectures of Organic Chemistry — Dr Mohamed Ebraheam',file:'Lectures of organic chemistry Dr Mohamed Ebraheam. .pdf'},
+    {label:'Data Show — Organic Chemistry — Dr Mohamed Ebraheam',file:'lecture of organic chemestry Dr.mohamed Ebraheam -data show-.pdf'},
+    {label:'شيت 2026 عضوية',file:'شيت 2026 عضويه .pdf'}
+  ],
+  'organic-abdelrazek':[
+    {label:'خلاصة ميكانيزمات العضوية — د. عبد الرزاق',file:'خلاصة ميكانيزمات العضويه ❤️.pdf'},
+    {label:'كيف تفرق والتحويلات — د. عبد الرزاق',file:'كيف تفرق و التحويلات .pdf'}
+  ]
+};
+
 /* توليد قائمة القوانين تلقائيًا من محتوى الفصول */
 function buildFormulasFromChapters(chapters){
   return chapters.map(ch=>({
@@ -920,7 +997,8 @@ function buildFormulasFromChapters(chapters){
    ========================================================= */
 const SUBJECTS_THEORY = [
   { id:"electrical-physics", name:"الفيزياء الكهربية", icon:"⚡", active:true, chapters:ELECTRICAL_CHAPTERS, quizzes:ELECTRICAL_QUIZZES, vocab:ELECTRICAL_VOCAB, symbols:ELECTRICAL_SYMBOLS },
-  { id:"organic-chemistry", name:"الكيمياء العضوية", icon:"🧪", active:false },
+  { id:"organic-mohamed", name:"الكيمياء العضوية — د. محمد إبراهيم", icon:"🧪", active:true, chapters:MOHAMED_CHAPTERS, quizzes:MOHAMED_QUIZZES, vocab:MOHAMED_VOCAB, symbols:MOHAMED_SYMBOLS },
+  { id:"organic-abdelrazek", name:"الكيمياء العضوية — د. عبد الرزاق", icon:"🧪", active:true, chapters:ABD_CHAPTERS, quizzes:ABD_QUIZZES, vocab:ABD_VOCAB, symbols:ABD_SYMBOLS },
   { id:"thermodynamics", name:"الديناميكا الحرارية", icon:"🔥", active:false },
   { id:"calculus", name:"تفاضل وتكامل", icon:"∫", active:false },
   { id:"linear-algebra", name:"جبر خطي", icon:"▦", active:false }
@@ -1051,18 +1129,30 @@ db.collection("site_config").doc("settings").onSnapshot(doc=>{
     document.getElementById("maintScreen").classList.remove("hidden");
   } else {
     document.getElementById("maintScreen").classList.add("hidden");
-    if(!currentUser) document.getElementById("authScreen").classList.remove("hidden");
+    if(currentUser){ document.getElementById("appShell").classList.remove("hidden"); }
+    else { document.getElementById("authScreen").classList.remove("hidden"); }
   }
-}, ()=>{ /* rules may block unauthenticated read; ignore */ });
+}, (err)=>{
+  console.error("site_config read failed:", err);
+});
 
 async function toggleMaintenance(){
   const on = document.getElementById("maintToggle").checked;
-  await db.collection("site_config").doc("settings").set({ maintenanceMode: on }, {merge:true});
+  try{
+    await db.collection("site_config").doc("settings").set({ maintenanceMode: on }, {merge:true});
+  }catch(err){
+    document.getElementById("maintToggle").checked = !on;
+    alert("فشل حفظ وضع الصيانة. الأغلب إن Firestore Rules لسه مش مضبوطة على UID الأدمن بتاعك في مجموعة site_config. راجع الشرح اللي بعته لك.");
+  }
 }
 async function saveMaintMessage(){
   const msg = document.getElementById("maintMsgInput").value.trim();
-  await db.collection("site_config").doc("settings").set({ maintenanceMessage: msg }, {merge:true});
-  alert("تم حفظ رسالة الصيانة");
+  try{
+    await db.collection("site_config").doc("settings").set({ maintenanceMessage: msg }, {merge:true});
+    alert("تم حفظ رسالة الصيانة");
+  }catch(err){
+    alert("فشل الحفظ. تأكد من صلاحيات Firestore Rules على مجموعة site_config.");
+  }
 }
 
 /* ---------- Notifications ---------- */
@@ -1119,7 +1209,8 @@ function renderDashboard(){
   let attempts=0; Object.values(userDoc.progress.chapters||{}).forEach(c=>attempts+=(c.attempts||0));
   document.getElementById("statQuizzes").textContent = attempts;
   const vocabDone = Object.values(userDoc.progress.vocab||{}).filter(v=>v.box>=2).length;
-  document.getElementById("statVocab").textContent = vocabDone+"/"+ELECTRICAL_VOCAB.length;
+  const vocabTotal = SUBJECTS_THEORY.reduce((n,s)=>n+(s.vocab?s.vocab.length:0),0);
+  document.getElementById("statVocab").textContent = vocabDone+"/"+vocabTotal;
 
   const theoryEl = document.getElementById("theorySubjects"); theoryEl.innerHTML="";
   SUBJECTS_THEORY.forEach(s=> theoryEl.appendChild(subjectCard(s)));
@@ -1157,7 +1248,7 @@ function goSubject(){ if(currentSubject) openSubject(currentSubject); else goDas
 function goDashboard(){ renderDashboard(); }
 
 function switchSubTab(tab){
-  ["chapters","formulas","symbols","vocab","progress"].forEach(t=>{
+  ["chapters","formulas","symbols","vocab","progress","references"].forEach(t=>{
     document.getElementById("tab-"+t).classList.toggle("active", t===tab);
     document.getElementById("subtab-"+t).classList.toggle("hidden", t!==tab);
   });
@@ -1166,6 +1257,7 @@ function switchSubTab(tab){
   if(tab==="symbols") renderSymbolsTab();
   if(tab==="vocab") renderVocabTab();
   if(tab==="progress") renderProgressTab();
+  if(tab==="references") renderReferencesTab();
 }
 
 function renderFormulasTab(){
@@ -1196,6 +1288,14 @@ function renderSymbolsTab(){
       </div>
     `).join("")}
   </div>`;
+}
+
+function renderReferencesTab(){
+  const el=document.getElementById("subtab-references");
+  const refs=SUBJECT_REFERENCES[currentSubject && currentSubject.id] || [];
+  if(!refs.length){el.innerHTML=`<div class="study-block"><h3>مراجع المادة</h3><p>المراجع الإضافية ستظهر هنا عند إضافتها.</p></div>`;return;}
+  const doctor=currentSubject.id==="organic-mohamed" ? "د. محمد إبراهيم" : "د. عبد الرزاق";
+  el.innerHTML=`<div class="study-block"><h3>مراجع ${doctor}</h3><p>كل ملف مستقل عن الآخر، والـشيت ظاهر كمرجع منفصل.</p><div class="chapter-actions" style="margin-top:12px;display:grid;gap:8px">${refs.map(r=>`<a class="btn-primary" href="${encodeURI(r.file)}" target="_blank" rel="noopener">${r.label}</a>`).join("")}</div></div>`;
 }
 
 /* ---------- Reviews (public) ---------- */
@@ -1530,12 +1630,16 @@ async function sendNotification(){
   const title = document.getElementById("notifTitle").value.trim();
   const text = document.getElementById("notifText").value.trim();
   if(!title || !text){ alert("اكتب العنوان والنص"); return; }
-  await db.collection("notifications").add({
-    target, title, text, createdAt: firebase.firestore.FieldValue.serverTimestamp()
-  });
-  document.getElementById("notifTitle").value = "";
-  document.getElementById("notifText").value = "";
-  alert("تم إرسال الإشعار");
+  try{
+    await db.collection("notifications").add({
+      target, title, text, createdAt: firebase.firestore.FieldValue.serverTimestamp()
+    });
+    document.getElementById("notifTitle").value = "";
+    document.getElementById("notifText").value = "";
+    alert("تم إرسال الإشعار");
+  }catch(err){
+    alert("فشل الإرسال. تأكد من صلاحيات Firestore Rules على مجموعة notifications.");
+  }
 }
 </script>
 </body>
